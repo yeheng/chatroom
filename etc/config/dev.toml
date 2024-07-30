@@ -1,0 +1,4 @@
+[database]
+url = "postgres://postgres:123456@localhost:5432/postgres"
+pool_size = 32
+pool_timeout = 60
