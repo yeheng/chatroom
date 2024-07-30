@@ -2,4 +2,6 @@
 extern crate rbatis;
 #[macro_use]
 pub mod config;
-pub mod model;
+pub mod util;
+pub mod middleware;
+pub mod modules;
