@@ -25,6 +25,8 @@ pub struct Jwt {
     pub secret: String,
     pub exp: usize,
     pub refresh_token: usize,
+    pub encode_key: String,
+    pub decode_key: String,
 }
 
 /// Config
@@ -45,6 +47,7 @@ pub struct ApplicationConfig {
     pub datetime_format: String,
     pub errors: HashMap<String, String>,
     pub error_infos: Option<HashMap<String, String>>,
+
 }
 
 impl ApplicationConfig {
@@ -57,10 +60,7 @@ impl ApplicationConfig {
             // Add in the current environment file
             // Default to 'development' env
             // Note that this file is _optional_
-            .add_source(
-                File::with_name(&format!("etc/config/{}", run_mode))
-                    .required(false),
-            )
+            .add_source(File::with_name(&format!("etc/config/{}", run_mode)).required(false))
             // Add in a local configuration file
             // This file shouldn't be checked in to git
             .add_source(File::with_name("etc/local").required(false))
@@ -73,18 +73,9 @@ impl ApplicationConfig {
         // Now that we're done, let's access our configuration
         println!("database: {:?}", s.get::<String>("database.url"));
 
-        // You can deserialize (and thus freeze) the entire configuration as
-        s.try_deserialize().unwrap()
+        return s.try_deserialize().unwrap()
     }
-}
 
-impl Default for ApplicationConfig {
-    fn default() -> Self {
-        ApplicationConfig::new()
-    }
-}
-
-impl ApplicationConfig {
     pub fn get_error_info(&self, code: &str) -> String {
         match self.errors.get(code) {
             None => match self.errors.get("-1") {
@@ -107,6 +98,12 @@ impl ApplicationConfig {
                 .unwrap()
                 .insert(error, k.to_string());
         }
+    }
+}
+
+impl Default for ApplicationConfig {
+    fn default() -> Self {
+        ApplicationConfig::new()
     }
 }
 

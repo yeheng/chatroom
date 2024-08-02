@@ -38,6 +38,8 @@ level = "info"
 secret = "pFWoIfZ4u33D413S0mRy15u8d7/lCaOfjI0Aq+aqIo/9CmWVuH4TgRQQK+KSvYhjksaNe7aUTP9XqN8oTCqfYw3rmiI1XqDlHgkWjL+z7PcfA4r3098kFn9piSCZzZ/B1Un/dB6G+5AR3fjX7wwP23JKDmtKaXo8sdhral9DQJc="
 exp = 1800
 refresh_token = 600
+encode_key = "MC4CAQAwBQYDK2VwBCIEICZ7VioTOmD7OtCdtKzlE2Mt6Zu1ZgFeMUzQy2czP7Ya"
+decode_key = "MCowBQYDK2VwAyEA/e9nUPgeM1Fm5ugzAyewQSOe20NIKCpr6WoTIcE4U/E="
 
 [errors]
 -1 = "未知错误"
