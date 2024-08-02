@@ -2,25 +2,25 @@ use std::collections::HashMap;
 use std::env;
 
 use config::{Config, Environment, File};
+use once_cell::sync::Lazy;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+pub static CONFIG: Lazy<ApplicationConfig> = Lazy::new(ApplicationConfig::default);
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Database {
     pub url: String,
+    pub db_name: String,
     pub pool_size: usize,
     pub pool_timeout: usize,
 }
 
-#[derive(Debug, PartialEq, serde::Serialize, serde::Deserialize)]
-pub struct Log {
-    pub dir: String,
-    pub rolling: String,
-    pub pack_compress: String,
-    pub keep_type: String,
-    pub level: String,
-    pub chan_len: Option<usize>,
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Redis {
+    pub url: String,
 }
 
-#[derive(Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Jwt {
     pub secret: String,
     pub exp: usize,
@@ -30,24 +30,17 @@ pub struct Jwt {
 }
 
 /// Config
-#[derive(Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ApplicationConfig {
     pub port: u16,
     pub host: String,
     pub database: Database,
-    pub log: Log,
     pub jwt: Jwt,
+    pub redis: Redis,
 
-    pub sms_cache_send_key_prefix: String,
     pub white_list_api: Vec<String>,
-    pub cache: String,
-    pub login_fail_retry: u64,
-    pub login_fail_retry_wait_sec: u64,
-    pub trash_recycle_days: u64,
-    pub datetime_format: String,
     pub errors: HashMap<String, String>,
     pub error_infos: Option<HashMap<String, String>>,
-
 }
 
 impl ApplicationConfig {
@@ -70,10 +63,7 @@ impl ApplicationConfig {
             .build()
             .unwrap();
 
-        // Now that we're done, let's access our configuration
-        println!("database: {:?}", s.get::<String>("database.url"));
-
-        return s.try_deserialize().unwrap()
+        return s.try_deserialize().unwrap();
     }
 
     pub fn get_error_info(&self, code: &str) -> String {
