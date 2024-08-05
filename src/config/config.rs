@@ -3,16 +3,7 @@ use std::env;
 
 use config::{Config, Environment, File};
 use jsonwebtoken::{DecodingKey, EncodingKey};
-use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
-
-lazy_static! {
-    pub static ref CONFIG: ApplicationConfig = ApplicationConfig::new();
-    pub static ref JWT_KEY: JwtKey = JwtKey {
-        encoding_key: EncodingKey::from_ed_pem(CONFIG.jwt.encode_key.as_bytes()).unwrap(),
-        decoding_key: DecodingKey::from_ed_pem(CONFIG.jwt.decode_key.as_bytes()).unwrap(),
-    };
-}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Database {

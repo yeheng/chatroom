@@ -13,7 +13,7 @@ use fastdate::{DateTime, DurationFrom};
 use jsonwebtoken::{Algorithm, Header, Validation};
 use log::debug;
 
-use crate::config::config::{CONFIG, JWT_KEY};
+use crate::config::{CONFIG, JWT_KEY};
 use crate::middleware::Claim;
 use crate::util::error::CustomError;
 

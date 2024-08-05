@@ -10,7 +10,7 @@ use actix_web_lab::middleware::NormalizePath;
 use rbatis::RBatis;
 use tracing_actix_web::TracingLogger;
 
-use crate::config::config::CONFIG;
+use crate::config::CONFIG;
 use crate::middleware;
 use crate::middleware::datasource::init_database;
 use crate::middleware::redis::init_redis;
