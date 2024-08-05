@@ -2,10 +2,17 @@ use std::collections::HashMap;
 use std::env;
 
 use config::{Config, Environment, File};
-use once_cell::sync::Lazy;
+use jsonwebtoken::{DecodingKey, EncodingKey};
+use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 
-pub static CONFIG: Lazy<ApplicationConfig> = Lazy::new(ApplicationConfig::default);
+lazy_static! {
+    pub static ref CONFIG: ApplicationConfig = ApplicationConfig::new();
+    pub static ref JWT_KEY: JwtKey = JwtKey {
+        encoding_key: EncodingKey::from_ed_pem(CONFIG.jwt.encode_key.as_bytes()).unwrap(),
+        decoding_key: DecodingKey::from_ed_pem(CONFIG.jwt.decode_key.as_bytes()).unwrap(),
+    };
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Database {
@@ -27,6 +34,7 @@ pub struct Jwt {
     pub refresh_token: usize,
     pub encode_key: String,
     pub decode_key: String,
+    pub issuer: String,
 }
 
 /// Config
@@ -41,6 +49,13 @@ pub struct ApplicationConfig {
     pub white_list_api: Vec<String>,
     pub errors: HashMap<String, String>,
     pub error_infos: Option<HashMap<String, String>>,
+
+}
+
+#[derive(Clone)]
+pub struct JwtKey {
+    pub encoding_key: EncodingKey,
+    pub decoding_key: DecodingKey,
 }
 
 impl ApplicationConfig {
@@ -100,6 +115,6 @@ impl Default for ApplicationConfig {
 #[macro_export]
 macro_rules! error_info {
     ($code: expr) => {
-        $crate::service::CONTEXT.config.get_error_info($code)
+        $crate::config::CONFIG.get_error_info($code)
     };
 }
