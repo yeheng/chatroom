@@ -1,10 +1,10 @@
 use actix_web::{http::header, HttpRequest, post, Responder, web};
 
 use crate::middleware::ResponseData;
-use crate::modules::auth::AuthService;
 use crate::modules::auth::model::{
     LoginPayload, NewUser, SignUpPayload, UpdateUser, User,
 };
+use crate::modules::user::UserService;
 use crate::util::{
     self,
     error::CustomError::{InternalError, UnauthorizedError, ValidationError},
@@ -26,7 +26,7 @@ pub async fn sign_up(payload: web::Json<SignUpPayload>) -> impl Responder {
     };
 
     // 先查询邮箱是否已注册
-    let user = AuthService::select_user_by_email(&email)
+    let user = UserService::select_user_by_email(&email)
         .await
         .map_err(|e| InternalError {
             message: e.to_string(),
@@ -36,7 +36,7 @@ pub async fn sign_up(payload: web::Json<SignUpPayload>) -> impl Responder {
         // 未注册
         None => {
             // 查询用户名是否重复
-            let is_existing = AuthService::is_uname_already_exists(&username)
+            let is_existing = UserService::is_uname_already_exists(&username)
                 .await
                 .map_err(|e| InternalError {
                     message: e.to_string(),
@@ -50,12 +50,12 @@ pub async fn sign_up(payload: web::Json<SignUpPayload>) -> impl Responder {
             let phc = util::auth_utils::get_phc_string(user.password.as_str());
             user.password = phc;
             // 注册操作，插入后再查询
-            AuthService::insert_new_user(&user)
+            UserService::insert_new_user(&user)
                 .await
                 .map_err(|e| InternalError {
                     message: e.to_string(),
                 })?;
-            let user = AuthService::select_user_by_email(&email)
+            let user = UserService::select_user_by_email(&email)
                 .await
                 .map_err(|e| InternalError {
                     message: e.to_string(),
@@ -81,7 +81,7 @@ pub async fn sign_up(payload: web::Json<SignUpPayload>) -> impl Responder {
                 });
             }
             //曾注册，后注销了账号
-            let is_existing = AuthService::is_uname_already_exists(&username)
+            let is_existing = UserService::is_uname_already_exists(&username)
                 .await
                 .map_err(|e| InternalError {
                     message: e.to_string(),
@@ -103,7 +103,7 @@ pub async fn sign_up(payload: web::Json<SignUpPayload>) -> impl Responder {
                 image: None,
                 deleted: Some(false),
             };
-            AuthService::update_user(&user)
+            UserService::update_user(&user)
                 .await
                 .map_err(|e| InternalError {
                     message: e.to_string(),
@@ -138,7 +138,7 @@ pub async fn login(request: HttpRequest, credentials: web::Json<LoginPayload>) -
         });
     }
 
-    let user = AuthService::select_user_by_email(email)
+    let user = UserService::select_user_by_email(email)
         .await
         .map_err(|e| InternalError {
             message: e.to_string(),

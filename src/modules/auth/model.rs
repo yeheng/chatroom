@@ -27,10 +27,8 @@ pub struct User {
     pub token: Option<String>,
 }
 
-impl_update!(UpdateUser {}, r#""user""#);
-impl_select!(UserTable {}, r#""user""#);
-impl_select!(User {select_user_by_uid(uid:u32) -> Option => "`WHERE uid = #{uid} AND deleted = false`" });
-impl_select!(User {select_user_by_email(uname:&str) -> Option => "`WHERE username = #{uname} AND deleted = false`" });
+impl_update!(UpdateUser {}, r#""sys_user""#);
+impl_select!(UserTable {}, r#""sys_user""#);
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct NewUser {

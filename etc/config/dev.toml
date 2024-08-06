@@ -1,5 +1,5 @@
 [database]
-url = "postgres://postgres:123456@localhost:5432/postgres"
+url = "postgres://postgres:123456@localhost:5432/tzw-live"
 host = "localhost"
 port = 5432
 user = "postgres"

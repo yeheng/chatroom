@@ -10,9 +10,7 @@ use actix_web_lab::middleware::NormalizePath;
 use tracing_actix_web::TracingLogger;
 
 use crate::config::CONFIG;
-use crate::middleware;
-use crate::middleware::datasource::DB;
-use crate::middleware::redis::REDIS;
+use crate::{middleware, modules};
 
 pub struct Application {
     pub server: Server,
@@ -36,6 +34,7 @@ impl Application {
                     ErrorHandlers::new()
                         .handler(StatusCode::BAD_REQUEST, middleware::format_response),
                 )
+                .configure(modules::route::router)
         })
         .bind(address.clone())
         .expect("Can not bind to port 8080")
