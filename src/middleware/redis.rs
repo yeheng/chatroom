@@ -1,13 +1,20 @@
-use redis::{Client, Commands};
+use lazy_static::lazy_static;
+use redis::Client;
 
-use crate::config::config::ApplicationConfig;
+use crate::config::CONFIG;
 
-pub fn init_redis(config: &ApplicationConfig) -> Client {
-    let url = config.redis.url.clone();
-    let client = redis::Client::open(url).unwrap();
+lazy_static! {
+    pub static ref REDIS: Redis = Redis::default();
+}
 
-    let mut conn = client.get_connection().unwrap();
-    let _v: bool = conn.exists("my_key").unwrap();
-    log::info!("redis init ({})...", config.redis.url);
-    client
+pub struct Redis {
+    pub client: Client,
+}
+
+impl Default for Redis {
+    fn default() -> Self {
+        let url = CONFIG.redis.url.clone();
+        let client = Client::open(url).unwrap();
+        Redis { client }
+    }
 }

@@ -2,14 +2,28 @@ use actix_http::header;
 use actix_web::{dev, FromRequest, HttpRequest};
 use actix_web::dev::ServiceRequest;
 use actix_web::error::ErrorBadRequest;
-use actix_web_lab::__reexports::futures_util::future;
-use actix_web_lab::__reexports::futures_util::future::LocalBoxFuture;
+use futures_util::future::{self, LocalBoxFuture};
 use log::debug;
 use rbatis::rbdc::DateTime;
 
-use crate::middleware::{Claim, RealWorldToken};
 use crate::util;
 use crate::util::error::CustomError::UnauthorizedError;
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct Claim {
+    // 必要，过期时间，UTC 时间戳
+    pub exp: usize,
+    // 可选，签发人
+    pub iss: String,
+    pub id: u32,
+    pub email: String,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct RealWorldToken {
+    pub scheme: String,
+    pub token: String,
+}
 
 ///Whether the interface is in the whitelist
 pub async fn validator(req: ServiceRequest, credentials: actix_web::Result<RealWorldToken>) -> Result<ServiceRequest, (actix_web::Error, ServiceRequest)> {

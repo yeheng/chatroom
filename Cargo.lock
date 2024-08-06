@@ -321,12 +321,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5c6cb57a04249c6480766f7f7cef5467412af1490f8d1e243141daddada3264f"
 
 [[package]]
-name = "anyhow"
-version = "1.0.86"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b3d1d046238990b9cf5bcde22a3fb3584ee5cf65fb2765f454ed428c7a0063da"
-
-[[package]]
 name = "arc-swap"
 version = "1.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -538,13 +532,13 @@ dependencies = [
  "actix-web",
  "actix-web-httpauth",
  "actix-web-lab",
- "anyhow",
  "argon2",
  "config",
  "derive_more",
  "fancy-regex",
  "fast_log",
  "fastdate 0.1.39",
+ "futures-util",
  "jsonwebtoken",
  "lazy_static",
  "log",
@@ -556,7 +550,6 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_urlencoded",
- "thiserror",
  "tokio",
  "tracing",
  "tracing-actix-web",
