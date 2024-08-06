@@ -8,12 +8,15 @@ edition = "2021"
 tokio = { version = "1", features = ["full"] }
 
 # actix web
+actix = "0.13.5"
 actix-web = "4"
 actix-http = "3"
 actix-cors = "0.7"
 actix-web-httpauth = "0.8"
 actix-web-lab = "0.21.0"
 tracing-actix-web = "0.7"
+actix-web-actors = "4.3.0"
+actix-broker = "0.4"
 
 #jwt
 argon2 = "0.5"
@@ -38,9 +41,9 @@ derive_more = "0.99"
 # utils
 config = "0.14.0"
 lazy_static = "1.5.0"
-rand_core = { version = "0.6", features = ["std"] }
-fastdate = "0.1"
+fastdate = "0.3"
 futures-util = "0.3"
+uuid = { version = "1", features = ["v4", "fast-rng"] }
 
 # tracing
 tracing = "0.1.19"

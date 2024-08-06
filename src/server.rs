@@ -10,7 +10,7 @@ use actix_web_lab::middleware::NormalizePath;
 use tracing_actix_web::TracingLogger;
 
 use crate::config::CONFIG;
-use crate::{middleware, modules};
+use crate::{middleware, modules, websocket};
 
 pub struct Application {
     pub server: Server,
@@ -33,6 +33,7 @@ impl Application {
                     ErrorHandlers::new()
                         .handler(StatusCode::BAD_REQUEST, middleware::format_response),
                 )
+                .service(web::resource("/ws").to(websocket::chat_ws))
                 .configure(modules::route::router)
         })
         .bind(address.clone())
