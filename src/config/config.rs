@@ -8,7 +8,6 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Database {
     pub url: String,
-    pub db_name: String,
     pub pool_size: usize,
     pub pool_timeout: usize,
 }

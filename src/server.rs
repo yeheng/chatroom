@@ -4,7 +4,7 @@ use actix_cors::Cors;
 use actix_http::StatusCode;
 use actix_web::dev::Server;
 use actix_web::http::header;
-use actix_web::middleware::{Compress, DefaultHeaders, ErrorHandlers, Logger};
+use actix_web::middleware::{DefaultHeaders, ErrorHandlers, Logger};
 use actix_web::{web, App, HttpServer};
 use actix_web_lab::middleware::NormalizePath;
 use tracing_actix_web::TracingLogger;
@@ -28,7 +28,6 @@ impl Application {
                 .wrap(Logger::default())
                 .wrap(Cors::permissive())
                 .wrap(DefaultHeaders::new().add(header::ContentType::json()))
-                .wrap(Compress::default())
                 .wrap(NormalizePath::trim())
                 .wrap(
                     ErrorHandlers::new()
@@ -37,7 +36,7 @@ impl Application {
                 .configure(modules::route::router)
         })
         .bind(address.clone())
-        .expect("Can not bind to port 8080")
+        .expect(&format!("Can not bind to {}", address))
         .run();
 
         Application { server }
