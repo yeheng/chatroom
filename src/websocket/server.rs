@@ -14,14 +14,17 @@ pub struct WsChatServer {
     rooms: HashMap<String, Room>,
 }
 
+// WsChatServer实现
 impl WsChatServer {
+    // 从self.rooms中获取一个房间，然后将该房间从self.rooms中移除并返回它。
     fn take_room(&mut self, room_name: &str) -> Option<Room> {
         let room = self.rooms.get_mut(room_name)?;
         let room = std::mem::take(room);
         Some(room)
     }
 
-    fn add_client_to_room(&mut self, room_name: &str, id: Option<Uuid >, client: Client) -> Uuid {
+    // 将一个客户端添加到一个房间中。如果房间不存在，则创建一个新房间。
+    fn add_client_to_room(&mut self, room_name: &str, id: Option<Uuid>, client: Client) -> Uuid {
         let mut id = id.unwrap_or_else(|| Uuid::new_v4());
 
         if let Some(room) = self.rooms.get_mut(room_name) {
@@ -46,6 +49,10 @@ impl WsChatServer {
         id
     }
 
+    /**
+     * 从self.rooms中获取一个房间，然后将该房间中的每个客户端都发送一个消息。
+     * 如果发送成功，则将客户端添加回房间中。
+     */
     fn send_chat_message(&mut self, room_name: &str, msg: &str, _src: Uuid) -> Option<()> {
         let mut room = self.take_room(room_name)?;
 
@@ -59,18 +66,29 @@ impl WsChatServer {
     }
 }
 
+// 为WsChatServer实现Actor
 impl Actor for WsChatServer {
     type Context = Context<Self>;
 
+    /**
+     * 在Actor启动时，我们订阅了LeaveRoom和SendMessage消息。
+     * 这样，我们就可以在Actor中处理这些消息。
+     */
     fn started(&mut self, ctx: &mut Self::Context) {
         self.subscribe_system_async::<LeaveRoom>(ctx);
         self.subscribe_system_async::<SendMessage>(ctx);
     }
 }
 
+/**
+ * 为JoinRoom消息实现Handler trait。
+ * 这个Handler trait的Result类型是MessageResult<JoinRoom>。
+ * 这意味着我们将返回一个MessageResult，其中包含一个Uuid。
+ */
 impl Handler<JoinRoom> for WsChatServer {
     type Result = MessageResult<JoinRoom>;
 
+    // 当处理JoinRoom消息时，我们将客户端添加到房间中，并返回一个MessageResult。
     fn handle(&mut self, msg: JoinRoom, _ctx: &mut Self::Context) -> Self::Result {
         let JoinRoom(room_name, client_name, client) = msg;
 
@@ -85,6 +103,7 @@ impl Handler<JoinRoom> for WsChatServer {
     }
 }
 
+// 为LeaveRoom消息实现Handler
 impl Handler<LeaveRoom> for WsChatServer {
     type Result = ();
 
@@ -95,6 +114,7 @@ impl Handler<LeaveRoom> for WsChatServer {
     }
 }
 
+// 为ListRooms消息实现Handler
 impl Handler<ListRooms> for WsChatServer {
     type Result = MessageResult<ListRooms>;
 
@@ -103,6 +123,7 @@ impl Handler<ListRooms> for WsChatServer {
     }
 }
 
+// 为SendMessage消息实现Handler
 impl Handler<SendMessage> for WsChatServer {
     type Result = ();
 
