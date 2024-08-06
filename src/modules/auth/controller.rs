@@ -1,9 +1,9 @@
 use actix_web::{http::header, HttpRequest, post, Responder, web};
 
 use crate::middleware::ResponseData;
-use crate::modules::auth::model::{
-    LoginPayload, NewUser, SignUpPayload, UpdateUser, User,
-};
+use crate::model::user::User;
+use crate::modules::auth::model::{LoginPayload, SignUpPayload};
+use crate::modules::user::model::{NewUser, UpdateUser};
 use crate::modules::user::UserService;
 use crate::util::{
     self,

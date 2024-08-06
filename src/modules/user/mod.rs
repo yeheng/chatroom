@@ -1,6 +1,7 @@
 pub mod controller;
-pub mod model;
 pub mod service;
+pub mod model;
+
 use lazy_static::lazy_static;
 
 pub use service::UserService as UserService;

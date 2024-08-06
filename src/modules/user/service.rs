@@ -5,7 +5,8 @@ use rbatis::rbdc;
 use rbs::to_value;
 
 use crate::middleware::datasource::DB;
-use crate::modules::auth::model::{NewUser, UpdateUser, User, UserTable};
+use crate::model::user::{User, UserTable};
+use crate::modules::user::model::{NewUser, UpdateUser};
 
 // Define the service struct
 pub struct UserService {
