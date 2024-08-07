@@ -1,7 +1,8 @@
 use fastdate::DateTime;
 use rbatis::impl_select;
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct UserTable {
     pub uid: u32,
     pub email: String,
@@ -15,7 +16,7 @@ pub struct UserTable {
     pub deleted: bool,
 }
 
-#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct User {
     pub uid: u32,
     pub email: String,

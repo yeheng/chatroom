@@ -5,3 +5,4 @@ pub mod modules;
 pub mod server;
 pub mod model;
 pub mod websocket;
+pub mod models;
