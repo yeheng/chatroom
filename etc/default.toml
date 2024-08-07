@@ -1,6 +1,7 @@
 port = 8088
 host = "127.0.0.1"
 white_list_api = ["/", "/admin/sys_login", "/admin/captcha"]
+log_level = "info"
 
 [database]
 url = "postgres://postgres:123456@localhost:5432/postgres"

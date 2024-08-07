@@ -27,6 +27,7 @@ fancy-regex = "0.13"
 # rbatis
 rbs = { version = "4.5" }
 rbatis = { version = "4.5" }
+rbatis-codegen = { version = "4.5" }
 rbdc-pg = { version = "4.5" }
 
 # logging

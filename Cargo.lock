@@ -622,6 +622,7 @@ dependencies = [
  "lazy_static",
  "log",
  "rbatis",
+ "rbatis-codegen",
  "rbdc-pg",
  "rbs",
  "redis",

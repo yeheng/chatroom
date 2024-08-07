@@ -1,3 +1,5 @@
+extern crate rbatis;
+
 use rbs::to_value;
 use redis::{Commands, Connection};
 
@@ -5,6 +7,7 @@ use chatroom::config::app_log;
 use chatroom::middleware::datasource::DB;
 use chatroom::middleware::redis::REDIS;
 use chatroom::server::Application;
+
 
 #[actix_web::main]
 async fn main() {

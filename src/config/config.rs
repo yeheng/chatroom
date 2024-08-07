@@ -35,6 +35,7 @@ pub struct ApplicationConfig {
     pub database: Database,
     pub jwt: Jwt,
     pub redis: Redis,
+    pub log_level: String,
 
     pub white_list_api: Vec<String>,
     pub errors: HashMap<String, String>,
@@ -55,10 +56,12 @@ impl ApplicationConfig {
         let s = Config::builder()
             // Start off by merging in the "default" configuration file
             .add_source(File::with_name("etc/default"))
+            .add_source(File::with_name("/etc/default").required(false))
             // Add in the current environment file
             // Default to 'development' env
             // Note that this file is _optional_
             .add_source(File::with_name(&format!("etc/config/{}", run_mode)).required(false))
+            .add_source(File::with_name(&format!("/etc/config/{}", run_mode)).required(false))
             // Add in a local configuration file
             // This file shouldn't be checked in to git
             .add_source(File::with_name("etc/local").required(false))

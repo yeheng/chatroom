@@ -1,7 +1,6 @@
 use rbatis::rbdc::DateTime;
 use serde::{Deserialize, Serialize};
 
-
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct AppChatGroupEncryptHistory {
     pub id: i64,
@@ -744,7 +743,6 @@ pub struct MediaPushLog {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-
 pub struct SysConfig {
     pub config_id: i64,
     pub config_name: Option<String>,
@@ -760,7 +758,6 @@ pub struct SysConfig {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-
 pub struct SysContact {
     pub user_id: i64,
     pub contact_id: i64,
@@ -772,7 +769,6 @@ pub struct SysContact {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-
 pub struct SysDept {
     pub dept_id: i64,
     pub parent_id: Option<i64>,
@@ -794,7 +790,6 @@ pub struct SysDept {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-
 pub struct SysDictData {
     pub dict_code: i64,
     pub dict_sort: Option<i16>,
@@ -813,7 +808,6 @@ pub struct SysDictData {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-
 pub struct SysDictType {
     pub dict_id: i64,
     pub dict_name: Option<String>,
@@ -878,7 +872,6 @@ pub struct SysGroupUser {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-
 pub struct SysJob {
     pub job_id: i64,
     pub job_name: String,
@@ -896,7 +889,6 @@ pub struct SysJob {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-
 pub struct SysJobLog {
     pub job_log_id: i64,
     pub job_name: String,
@@ -928,7 +920,6 @@ pub struct SysLevel {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-
 pub struct SysLogininfor {
     pub info_id: i64,
     pub user_id: Option<i64>,
@@ -993,7 +984,6 @@ pub struct SysNotice {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-
 pub struct SysOperLog {
     pub oper_id: i64,
     pub title: Option<String>,
@@ -1026,7 +1016,6 @@ pub struct SysOssLog {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-
 pub struct SysPost {
     pub post_id: i64,
     pub post_code: String,
@@ -1055,7 +1044,6 @@ pub struct SysReadLog {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-
 pub struct SysRobot {
     pub user_id: i64,
     pub user_name: String,
@@ -1070,7 +1058,6 @@ pub struct SysRobot {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-
 pub struct SysRole {
     pub role_id: i64,
     pub role_code: Option<String>,
@@ -1091,14 +1078,12 @@ pub struct SysRole {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-
 pub struct SysRoleDept {
     pub role_id: i64,
     pub dept_id: i64,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-
 pub struct SysRoleMenu {
     pub role_id: i64,
     pub menu_id: i64,
@@ -1146,7 +1131,6 @@ pub struct SysSignOn {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-
 pub struct SysUser {
     pub user_id: i64,
     pub user_name: String,
@@ -1199,35 +1183,30 @@ pub struct SysUser {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-
 pub struct SysUserAgent {
     pub user_id: i64,
     pub act_for_id: i64,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-
 pub struct SysUserDept {
     pub user_id: i64,
     pub dept_id: i64,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-
 pub struct SysUserPost {
     pub user_id: i64,
     pub post_id: i64,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-
 pub struct SysUserRole {
     pub user_id: i64,
     pub role_id: i64,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-
 pub struct SysUserUser {
     pub user_id: i64,
     pub manage_user_id: i64,
@@ -1407,3 +1386,84 @@ pub struct XxlJobUser {
     pub role: i16,
     pub permission: Option<String>,
 }
+
+rbatis::crud!(AppChatGroupEncryptHistory{}, "app_chat_group_encrypt_history");
+rbatis::crud!(AppChatGroupHistory{}, "app_chat_group_history");
+rbatis::crud!(AppChatGroupHistoryDecryptRecord{}, "app_chat_group_history_decrypt_record");
+rbatis::crud!(AppChatWhisperHistory{}, "app_chat_whisper_history");
+rbatis::crud!(AppMoment{}, "app_moment");
+rbatis::crud!(AppMomentComment{}, "app_moment_comment");
+rbatis::crud!(AppMomentLike{}, "app_moment_like");
+rbatis::crud!(AppMomentLikeLog{}, "app_moment_like_log");
+rbatis::crud!(AppMomentsImage{}, "app_moments_image");
+rbatis::crud!(AppNew{}, "app_new");
+rbatis::crud!(AppNewsCatalog{}, "app_news_catalog");
+rbatis::crud!(AppNewsComment{}, "app_news_comment");
+rbatis::crud!(AppNewsFavorite{}, "app_news_favorite");
+rbatis::crud!(AppNewsFavoriteLikeLog{}, "app_news_favorite_like_log");
+rbatis::crud!(AppNewsLike{}, "app_news_like");
+rbatis::crud!(LiveChatHistory{}, "live_chat_history");
+rbatis::crud!(LiveForbiddenSet{}, "live_forbidden_set");
+rbatis::crud!(LiveMobileNavBar{}, "live_mobile_nav_bar");
+rbatis::crud!(LiveNavBar{}, "live_nav_bar");
+rbatis::crud!(LiveRobotTimeSet{}, "live_robot_time_set");
+rbatis::crud!(LiveRoom{}, "live_room");
+rbatis::crud!(LiveRoomChapter{}, "live_room_chapter");
+rbatis::crud!(LiveRoomChapterItem{}, "live_room_chapter_item");
+rbatis::crud!(LiveRoomChapterItemLecturer{}, "live_room_chapter_item_lecturer");
+rbatis::crud!(LiveRoomChapterLog{}, "live_room_chapter_log");
+rbatis::crud!(LiveRoomLectureVote{}, "live_room_lecture_vote");
+rbatis::crud!(LiveRoomLecturer{}, "live_room_lecturer");
+rbatis::crud!(LiveRoomStyle{}, "live_room_style");
+rbatis::crud!(LiveRoomTheme{}, "live_room_theme");
+rbatis::crud!(LiveRoomUser{}, "live_room_user");
+rbatis::crud!(LiveRoomUserFavorite{}, "live_room_user_favorite");
+rbatis::crud!(LiveRoomWatchLog{}, "live_room_watch_log");
+rbatis::crud!(LiveSensitiveWord{}, "live_sensitive_word");
+rbatis::crud!(LiveSlideshowAdv{}, "live_slideshow_adv");
+rbatis::crud!(MediaChannel{}, "media_channel");
+rbatis::crud!(MediaParam{}, "media_param");
+rbatis::crud!(MediaPushLog{}, "media_push_log");
+rbatis::crud!(SysConfig{}, "sys_config");
+rbatis::crud!(SysContact{}, "sys_contact");
+rbatis::crud!(SysDept{}, "sys_dept");
+rbatis::crud!(SysDictData{}, "sys_dict_data");
+rbatis::crud!(SysDictType{}, "sys_dict_type");
+rbatis::crud!(SysFollow{}, "sys_follow");
+rbatis::crud!(SysFollowLog{}, "sys_follow_log");
+rbatis::crud!(SysGroup{}, "sys_group");
+rbatis::crud!(SysGroupUser{}, "sys_group_user");
+rbatis::crud!(SysJob{}, "sys_job");
+rbatis::crud!(SysJobLog{}, "sys_job_log");
+rbatis::crud!(SysLevel{}, "sys_level");
+rbatis::crud!(SysLogininfor{}, "sys_logininfor");
+rbatis::crud!(SysMenu{}, "sys_menu");
+rbatis::crud!(SysNotice{}, "sys_notice");
+rbatis::crud!(SysOperLog{}, "sys_oper_log");
+rbatis::crud!(SysOssLog{}, "sys_oss_log");
+rbatis::crud!(SysPost{}, "sys_post");
+rbatis::crud!(SysReadLog{}, "sys_read_log");
+rbatis::crud!(SysRobot{}, "sys_robot");
+rbatis::crud!(SysRole{}, "sys_role");
+rbatis::crud!(SysRoleDept{}, "sys_role_dept");
+rbatis::crud!(SysRoleMenu{}, "sys_role_menu");
+rbatis::crud!(SysSeq{}, "sys_seq");
+rbatis::crud!(SysSignOn{}, "sys_sign_on");
+rbatis::crud!(SysUser{}, "sys_user");
+rbatis::crud!(SysUserAgent{}, "sys_user_agent");
+rbatis::crud!(SysUserDept{}, "sys_user_dept");
+rbatis::crud!(SysUserPost{}, "sys_user_post");
+rbatis::crud!(SysUserRole{}, "sys_user_role");
+rbatis::crud!(SysUserUser{}, "sys_user_user");
+rbatis::crud!(SysUserWsLog{}, "sys_user_ws_log");
+rbatis::crud!(SysUserWsLogStatic{}, "sys_user_ws_log_static");
+rbatis::crud!(SysUserWsLogStaticsJson{}, "sys_user_ws_log_statics_json");
+rbatis::crud!(SysUserWsLogStaticsMonth{}, "sys_user_ws_log_statics_month");
+rbatis::crud!(XxlJobGroup{}, "xxl_job_group");
+rbatis::crud!(XxlJobInfo{}, "xxl_job_info");
+rbatis::crud!(XxlJobLock{}, "xxl_job_lock");
+rbatis::crud!(XxlJobLog{}, "xxl_job_log");
+rbatis::crud!(XxlJobLogReport{}, "xxl_job_log_report");
+rbatis::crud!(XxlJobLogglue{}, "xxl_job_logglue");
+rbatis::crud!(XxlJobRegistry{}, "xxl_job_registry");
+rbatis::crud!(XxlJobUser{}, "xxl_job_user");
