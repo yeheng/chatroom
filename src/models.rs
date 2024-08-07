@@ -1132,7 +1132,7 @@ pub struct SysSignOn {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct SysUser {
-    pub user_id: i64,
+    pub user_id: u32,
     pub user_name: String,
     pub nick_name: String,
     pub user_type: Option<i16>,

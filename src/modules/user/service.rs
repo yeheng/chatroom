@@ -5,8 +5,9 @@ use rbatis::rbdc;
 use rbs::to_value;
 
 use crate::middleware::datasource::DB;
-use crate::model::user::{User, UserTable};
-use crate::modules::user::model::{NewUser, UpdateUser};
+use crate::model::user::User;
+use crate::models::SysUser;
+use crate::modules::user::model::{NewUser};
 
 // Define the service struct
 pub struct UserService {
@@ -18,12 +19,12 @@ impl UserService {
     pub async fn select_user_by_uid(uid: u32) -> Result<Option<User>, rbatis::Error> {
         let rb = DB.rb.rb_ref();
         rb.query_decode(
-            r#"SELECT * FROM "sys_user" WHERE uid = ? AND deleted = false"#,
+            r#"SELECT * FROM "sys_user" WHERE user_id = ?"#,
             vec![to_value!(uid)],
         ).await
     }
 
-    pub async fn select_user_by_email(email: &str) -> Result<Option<UserTable>, rbdc::Error> {
+    pub async fn select_user_by_email(email: &str) -> Result<Option<SysUser>, rbdc::Error> {
         let rb = DB.rb.rb_ref();
         rb.query_decode(
             r#"SELECT * FROM "sys_user" WHERE email = ?"#,
@@ -53,23 +54,21 @@ impl UserService {
         Ok(exec_result.rows_affected)
     }
 
-    pub async fn update_user(u: &UpdateUser) -> Result<i64, rbatis::Error> {
+    pub async fn update_user(u: &SysUser) -> Result<i64, rbatis::Error> {
         let rb = DB.rb.rb_ref();
+
         let exec_result = rb.exec(
             r#"
         UPDATE "sys_user"
-        SET email = ?, username = ?, password = ?, nickname = ?, bio =?, image = ?, deleted = ?
+        SET email = ?, user_name = ?, password = ?, nick_name = ?
         WHERE uid = ?;
         "#,
             vec![
                 to_value!(&u.email),
-                to_value!(&u.username),
+                to_value!(&u.user_name),
                 to_value!(&u.password),
-                to_value!(&u.nickname),
-                to_value!(&u.bio),
-                to_value!(&u.image),
-                to_value!(u.deleted),
-                to_value!(u.uid),
+                to_value!(&u.nick_name),
+                to_value!(u.user_id),
             ],
         ).await?;
 

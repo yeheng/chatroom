@@ -8,7 +8,6 @@ use chatroom::middleware::datasource::DB;
 use chatroom::middleware::redis::REDIS;
 use chatroom::server::Application;
 
-
 #[actix_web::main]
 async fn main() {
     app_log::init_log();
@@ -19,7 +18,7 @@ async fn main() {
 
     let count: i32 = DB
         .rb
-        .query_decode(r#"select 1"#, vec![to_value!()])
+        .query_decode(r#"select count(0) from sys_user"#, vec![to_value!()])
         .await
         .unwrap();
     log::info!("count = {}", count);
