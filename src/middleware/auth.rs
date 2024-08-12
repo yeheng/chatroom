@@ -1,9 +1,8 @@
 use actix_http::header;
-use actix_web::{dev, FromRequest, HttpRequest};
 use actix_web::dev::ServiceRequest;
 use actix_web::error::ErrorBadRequest;
+use actix_web::{dev, FromRequest, HttpRequest};
 use futures_util::future::{self, LocalBoxFuture};
-use log::debug;
 use rbatis::rbdc::DateTime;
 
 use crate::util;
@@ -11,12 +10,13 @@ use crate::util::error::CustomError::UnauthorizedError;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Claim {
-    // 必要，过期时间，UTC 时间戳
+    // 必要,过期时间,UTC 时间戳
     pub exp: usize,
     // 可选，签发人
     pub iss: String,
     pub id: u32,
-    pub email: String,
+    pub username: String,
+    pub permissions: Vec<String>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -26,45 +26,54 @@ pub struct RealWorldToken {
 }
 
 ///Whether the interface is in the whitelist
-pub async fn validator(req: ServiceRequest, credentials: actix_web::Result<RealWorldToken>) -> Result<ServiceRequest, (actix_web::Error, ServiceRequest)> {
+pub async fn validator(
+    req: ServiceRequest,
+    credentials: actix_web::Result<RealWorldToken>,
+) -> Result<ServiceRequest, (actix_web::Error, ServiceRequest)> {
     let origin = util::auth_utils::get_header_value_str(req.request(), header::REFERER, "");
     let token = match credentials {
         Err(e) => {
-            debug!("捕获到错误 ==> {:#?}", e);
-            return Err((UnauthorizedError {
-                realm: origin.to_owned(),
-                message: e.to_string(),
-            }.into(), req));
+            log::debug!("解析token出错 ==> {:#?}", e);
+            return Err((
+                UnauthorizedError {
+                    realm: origin.to_owned(),
+                    message: e.to_string(),
+                }
+                .into(),
+                req,
+            ));
         }
         Ok(token) => token,
     };
-    debug!("即将要校验的 Token => {:#?}", &token);
+    log::debug!("校验Token => {:#?}", &token);
     let RealWorldToken { token, scheme } = token;
     match scheme.as_str() {
-        "Token" => {}
-        _ => return Err((UnauthorizedError {
-            realm: origin.to_owned(),
-            message: "Invalid header value".to_owned(),
-        }.into(), req)),
+        "Bearer" => {}
+        _ => {
+            return Err((
+                UnauthorizedError {
+                    realm: origin.to_owned(),
+                    message: "Invalid header value".to_owned(),
+                }
+                .into(),
+                req,
+            ))
+        }
     };
 
     let result = util::auth_utils::validate_token(&token, origin);
     let now = DateTime::now().unix_timestamp() as usize;
     match result {
-        Ok(claims) if now < claims.exp => {
-            Ok(req)
-        }
+        Ok(claims) if now < claims.exp => Ok(req),
         Ok(_) => {
-            debug!("Token 已过期！");
+            log::warn!("Token 已过期！");
             let error = UnauthorizedError {
                 realm: origin.to_owned(),
                 message: "Token expired".to_owned(),
             };
             Err((error.into(), req))
         }
-        Err(err) => {
-            Err((err, req))
-        }
+        Err(err) => Err((err, req)),
     }
 }
 
@@ -74,7 +83,6 @@ impl FromRequest for RealWorldToken {
     type Future = future::Ready<actix_web::Result<Self, Self::Error>>;
 
     fn from_request(request: &HttpRequest, _payload: &mut dev::Payload) -> Self::Future {
-        debug!("调用 Token 提取器");
         let authorization = request.headers().get(header::AUTHORIZATION);
         if authorization.is_none() {
             return future::err(ErrorBadRequest("Authentication required!"));
@@ -103,7 +111,6 @@ impl FromRequest for Claim {
     type Future = LocalBoxFuture<'static, actix_web::Result<Self, Self::Error>>;
 
     fn from_request(request: &HttpRequest, _payload: &mut dev::Payload) -> Self::Future {
-        debug!("调用 Token 载荷提取器");
         let request = request.to_owned();
         Box::pin(async move {
             let RealWorldToken { token, .. } = RealWorldToken::extract(&request).await?;

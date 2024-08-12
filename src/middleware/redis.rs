@@ -18,3 +18,11 @@ impl Default for Redis {
         Redis { client }
     }
 }
+
+
+#[macro_export]
+macro_rules! redis_conn {
+    () => {
+        $crate::middleware::redis::REDIS.client.get_connection().unwrap()
+    };
+}

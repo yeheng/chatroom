@@ -1141,7 +1141,7 @@ pub struct SysUser {
     pub sex: Option<i16>,
     pub avatar: Option<String>,
     pub cover: Option<String>,
-    pub password: Option<String>,
+    pub password: String,
     pub status: Option<i16>,
     pub del_flag: Option<i16>,
     pub remark: Option<String>,

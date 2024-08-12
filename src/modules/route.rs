@@ -6,8 +6,7 @@ use crate::modules::auth::controller::*;
 use crate::modules::user::controller::*;
 
 pub fn router(config: &mut ServiceConfig) {
-    config.service(sign_up)
-        .service(login);
+    config.service(login);
     config.service(
         web::scope("/api")
             .service(

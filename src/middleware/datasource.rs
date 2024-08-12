@@ -37,3 +37,10 @@ impl DataSource {
         );
     }
 }
+
+#[macro_export]
+macro_rules! db {
+    () => {
+        $crate::middleware::datasource::DB.rb.rb_ref()
+    };
+}

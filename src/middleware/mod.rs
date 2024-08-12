@@ -1,14 +1,14 @@
-use actix_http::{header, StatusCode};
 use actix_http::body::BoxBody;
-use actix_web::{dev, HttpRequest, HttpResponse, Responder};
+use actix_http::{header, StatusCode};
 use actix_web::http::header::ContentType;
 use actix_web::middleware::ErrorHandlerResponse;
+use actix_web::{dev, HttpRequest, HttpResponse, Responder};
 use fancy_regex::Regex;
 use serde_json::json;
 
+pub mod auth;
 pub mod datasource;
 pub mod redis;
-pub mod auth;
 
 // 统一响应结构体
 #[derive(Debug, serde::Serialize)]
@@ -22,7 +22,16 @@ impl ResponseData {
         T: serde::Serialize,
     {
         Self {
-            body: json!({property_name: data}).to_string()
+            body: json!({property_name: data}).to_string(),
+        }
+    }
+
+    pub fn data<T>(data: T) -> Self
+    where
+        T: serde::Serialize,
+    {
+        Self {
+            body: json!(data).to_string(),
         }
     }
 
@@ -39,8 +48,8 @@ impl ResponseData {
             Err(_) => &type_name,
             Ok(option) => match option {
                 None => &type_name,
-                Some(m) => m.as_str()
-            }
+                Some(m) => m.as_str(),
+            },
         };
         Self::new(type_name, data)
     }
@@ -58,7 +67,9 @@ impl Responder for ResponseData {
     }
 }
 
-pub fn format_response<B>(mut response: dev::ServiceResponse<B>) -> actix_web::Result<ErrorHandlerResponse<B>> {
+pub fn format_response<B>(
+    mut response: dev::ServiceResponse<B>,
+) -> actix_web::Result<ErrorHandlerResponse<B>> {
     // 重写请求头的 content-type
     response.response_mut().headers_mut().insert(
         header::CONTENT_TYPE,
@@ -69,15 +80,18 @@ pub fn format_response<B>(mut response: dev::ServiceResponse<B>) -> actix_web::R
     // 获取框架的错误信息
     let error_message: String = match response.response().error() {
         Some(e) => e.to_string(),
-        None => String::from("Unknown Error")
+        None => String::from("Unknown Error"),
     };
     // 格式化响应体为要求的返回格式
     let body = json!({
         "error": {
             "body": [error_message]
         }
-    }).to_string();
+    })
+    .to_string();
     let new_response = response.map_body(move |_head, _body| BoxBody::new(body));
 
-    Ok(ErrorHandlerResponse::Response(new_response.map_into_right_body()))
+    Ok(ErrorHandlerResponse::Response(
+        new_response.map_into_right_body(),
+    ))
 }

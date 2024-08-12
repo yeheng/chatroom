@@ -2,23 +2,22 @@ use std::fmt::Debug;
 
 use actix_web::{
     error,
-    http::{header::ContentType, StatusCode}, HttpResponse,
+    http::{header::ContentType, StatusCode},
+    HttpResponse,
 };
+use derive_more::derive::{Display, Error};
 use log::debug;
 use serde_json::json;
 
-#[derive(Debug, derive_more::Display, derive_more::Error)]
+#[derive(Debug, Display, Error)]
 pub enum CustomError {
-    #[display(fmt = "Validation error: {}", message)]
+    #[display("Validation error: {}", message)]
     ValidationError { message: String },
 
-    #[display(fmt = "Unauthorized: {}", message)]
-    UnauthorizedError {
-        realm: String,
-        message: String,
-    },
+    #[display("Unauthorized: {}", message)]
+    UnauthorizedError { realm: String, message: String },
 
-    #[display(fmt = "Internal error: {}", message)]
+    #[display("Internal error: {}", message)]
     InternalError { message: String },
 }
 
@@ -38,7 +37,10 @@ impl error::ResponseError for CustomError {
 
         if let CustomError::UnauthorizedError { realm, message, .. } = self {
             debug!("错误消息 ==> {}", message);
-            let error_message = format!("Token realm=\"{}\", error=\"Unauthorized\", error_description=\"{}\"", realm, message);
+            let error_message = format!(
+                "Token realm=\"{}\", error=\"Unauthorized\", error_description=\"{}\"",
+                realm, message
+            );
             builder.insert_header(("WWW-Authenticate", error_message.as_str()));
         }
 
@@ -46,7 +48,8 @@ impl error::ResponseError for CustomError {
             "error": {
                 "body": [self.to_string()]
             }
-        }).to_string();
+        })
+        .to_string();
 
         builder
             .content_type(ContentType::json())
