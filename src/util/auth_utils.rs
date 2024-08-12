@@ -6,7 +6,8 @@ use argon2::{
     password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
     Argon2,
 };
-use base64::prelude::*;
+use base64::engine::general_purpose::STANDARD;
+use base64::Engine;
 use fastdate::{DateTime, DurationFrom};
 use jsonwebtoken::{Algorithm, Header, Validation};
 use openssl::symm::{decrypt, Cipher};
@@ -14,8 +15,6 @@ use openssl::symm::{decrypt, Cipher};
 use crate::config::{CONFIG, JWT_KEY};
 use crate::middleware::auth::Claim;
 use crate::util::error::CustomError;
-
-static KEY: &[u8; 16] = b"0000001511179138";
 
 /// 获取 PHC 字符串
 pub fn get_phc_string(password: &str) -> String {
@@ -29,22 +28,18 @@ pub fn get_phc_string(password: &str) -> String {
         .to_string()
 }
 
-fn into_array<T>(v: Vec<T>) -> [T; 16] {
-    let boxed_slice = v.into_boxed_slice();
-    let boxed_array: Box<[T; 16]> = match boxed_slice.try_into() {
-        Ok(ba) => ba,
-        Err(o) => panic!("Expected a Vec of length {} but it was {}", 16, o.len()),
-    };
-    *boxed_array
-}
-
 /// 校验密码和哈希
 pub fn verify_aes_password(password: &str, password_hash: &str) -> bool {
     let cipher = Cipher::aes_128_ecb();
 
-    let decrypt = decrypt(cipher, KEY, None, password_hash.as_bytes())
-        .map_err(|e| e.to_string())
-        .unwrap();
+    let decrypt = decrypt(
+        cipher,
+        CONFIG.key.as_bytes(),
+        None,
+        STANDARD.decode(password_hash).unwrap().as_slice(),
+    )
+    .map_err(|e| e.to_string())
+    .unwrap();
 
     password == String::from_utf8(decrypt).unwrap()
 }
@@ -75,7 +70,7 @@ pub fn sign_token(
         iss: CONFIG.jwt.issuer.to_owned(),
         id,
         username,
-        permissions: permissions,
+        permissions,
     };
     let header = Header::new(Algorithm::EdDSA);
     let token = jsonwebtoken::encode(&header, &claims, &JWT_KEY.encoding_key).map_err(|e| {

@@ -36,11 +36,11 @@ pub struct ApplicationConfig {
     pub jwt: Jwt,
     pub redis: Redis,
     pub log_level: String,
+    pub key: String,
 
     pub white_list_api: Vec<String>,
     pub errors: HashMap<String, String>,
     pub error_infos: Option<HashMap<String, String>>,
-
 }
 
 #[derive(Clone)]
@@ -71,7 +71,7 @@ impl ApplicationConfig {
             .build()
             .unwrap();
 
-        return s.try_deserialize().unwrap();
+        s.try_deserialize().unwrap()
     }
 
     pub fn get_error_info(&self, code: &str) -> String {

@@ -2,6 +2,7 @@ port = 8088
 host = "127.0.0.1"
 white_list_api = ["/", "/admin/sys_login", "/admin/captcha"]
 log_level = "info"
+key = "0000001511179138"
 
 [database]
 url = "postgres://postgres:123456@localhost:5432/postgres"
@@ -16,8 +17,8 @@ secret = "pFWoIfZ4u33D413S0mRy15u8d7/lCaOfjI0Aq+aqIo/9CmWVuH4TgRQQK+KSvYhjksaNe7
 exp = 1800
 refresh_token = 600
 issuer = "tzwshop"
-encode_key = "MC4CAQAwBQYDK2VwBCIEICZ7VioTOmD7OtCdtKzlE2Mt6Zu1ZgFeMUzQy2czP7Ya"
-decode_key = "MCowBQYDK2VwAyEA/e9nUPgeM1Fm5ugzAyewQSOe20NIKCpr6WoTIcE4U/E="
+encode_key = "-----BEGIN PRIVATE KEY-----\nMC4CAQAwBQYDK2VwBCIEICZ7VioTOmD7OtCdtKzlE2Mt6Zu1ZgFeMUzQy2czP7Ya\n-----END PRIVATE KEY-----"
+decode_key = "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEA/e9nUPgeM1Fm5ugzAyewQSOe20NIKCpr6WoTIcE4U/E=\n-----END PUBLIC KEY-----"
 
 [errors]
 -1 = "未知错误"
