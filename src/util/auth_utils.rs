@@ -9,13 +9,13 @@ use argon2::{
 use base64::prelude::*;
 use fastdate::{DateTime, DurationFrom};
 use jsonwebtoken::{Algorithm, Header, Validation};
-use soft_aes::aes::aes_dec_ecb;
+use openssl::symm::{decrypt, Cipher};
 
 use crate::config::{CONFIG, JWT_KEY};
 use crate::middleware::auth::Claim;
 use crate::util::error::CustomError;
 
-static KEY: &[u8; 16] = b"0000001738398039";
+static KEY: &[u8; 16] = b"0000001511179138";
 
 /// 获取 PHC 字符串
 pub fn get_phc_string(password: &str) -> String {
@@ -40,15 +40,13 @@ fn into_array<T>(v: Vec<T>) -> [T; 16] {
 
 /// 校验密码和哈希
 pub fn verify_aes_password(password: &str, password_hash: &str) -> bool {
+    let cipher = Cipher::aes_128_ecb();
 
-    let encrypted = BASE64_STANDARD
-        .decode(password_hash)
-        .expect("BASE64 Decoding failed");
-    let binding = into_array(encrypted);
+    let decrypt = decrypt(cipher, KEY, None, password_hash.as_bytes())
+        .map_err(|e| e.to_string())
+        .unwrap();
 
-    let decrypted =
-        String::from_utf8(aes_dec_ecb(&binding, KEY, Some("PKCS7")).expect("Decryption failed")).unwrap();
-    return password == decrypted;
+    password == String::from_utf8(decrypt).unwrap()
 }
 
 pub fn verify_password(password: &str, password_hash: &str) -> bool {
@@ -157,5 +155,4 @@ mod tests {
         let claim = validate_token(&token, "localhost").unwrap();
         assert_eq!(claim.username, username);
     }
-
 }
