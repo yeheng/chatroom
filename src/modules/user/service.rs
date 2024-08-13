@@ -24,13 +24,12 @@ impl UserService {
         let key = format!("user:id:{}", uid);
         let mut conn: Connection = redis_conn!();
         match conn.get::<String, String>(key.clone()) {
-            Ok(user) => Ok(Some(serde_json::from_str(&user).unwrap())),
+            Ok(user) => Ok(Some(serde_json::from_str::<sys_user::Model>(&user).unwrap())),
             Err(_) => {
                 let user = sys_user::Entity::find()
                     .filter(sys_user::Column::UserId.eq(uid))
                     .one(con)
-                    .await
-                    .unwrap();
+                    .await?;
 
                 if user.is_some() {
                     conn.set::<String, String, String>(
@@ -52,13 +51,12 @@ impl UserService {
         let key = format!("user:username:{}", username);
         let mut conn: Connection = redis_conn!();
         match conn.get::<String, String>(key.clone()) {
-            Ok(user) => Ok(Some(serde_json::from_str(&user).unwrap())),
+            Ok(user) => Ok(Some(serde_json::from_str::<sys_user::Model>(&user).unwrap())),
             Err(_) => {
                 let user = sys_user::Entity::find()
                     .filter(sys_user::Column::UserName.eq(username))
                     .one(con)
-                    .await
-                    .unwrap();
+                    .await?;
 
                 if user.is_some() {
                     conn.set::<String, String, String>(
@@ -86,7 +84,7 @@ impl UserService {
 
         match query_res {
             Some(qr) => {
-                let count: i64 = qr.try_get("", "count").unwrap();
+                let count: i64 = qr.try_get("", "count")?;
                 Ok(count > 0)
             }
             None => Ok(false),
