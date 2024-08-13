@@ -2,10 +2,6 @@ use std::time::Duration;
 
 use actix_http::header::HeaderName;
 use actix_web::HttpRequest;
-use argon2::{
-    password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
-    Argon2,
-};
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine;
 use fastdate::{DateTime, DurationFrom};
@@ -15,18 +11,6 @@ use openssl::symm::{decrypt, Cipher};
 use crate::config::{CONFIG, JWT_KEY};
 use crate::middleware::auth::Claim;
 use crate::util::error::CustomError;
-
-/// 获取 PHC 字符串
-pub fn get_phc_string(password: &str) -> String {
-    let salt = SaltString::generate(&mut OsRng);
-    // Argon2 with default params (Argon2id v19)
-    let argon2 = Argon2::default();
-    // Hash password to PHC string ($argon2id$v=19$...)
-    argon2
-        .hash_password(password.as_bytes(), &salt)
-        .unwrap()
-        .to_string()
-}
 
 /// 校验密码和哈希
 pub fn verify_aes_password(password: &str, password_hash: &str) -> bool {
@@ -44,21 +28,9 @@ pub fn verify_aes_password(password: &str, password_hash: &str) -> bool {
     password == String::from_utf8(decrypt).unwrap()
 }
 
-pub fn verify_password(password: &str, password_hash: &str) -> bool {
-    // NOTE: hash params from `parsed_hash` are used instead of what is configured in the `Argon2` instance.
-    let parsed_hash = PasswordHash::new(password_hash);
-    if parsed_hash.is_err() {
-        log::debug!("Invalid password hash: {:#?}", parsed_hash.unwrap_err());
-        return false;
-    }
-    Argon2::default()
-        .verify_password(password.as_bytes(), &parsed_hash.unwrap())
-        .is_ok()
-}
-
 // 签发 token
 pub fn sign_token(
-    id: u32,
+    id: i64,
     username: String,
     permissions: Vec<String>,
 ) -> Result<String, actix_web::Error> {
@@ -117,20 +89,6 @@ mod tests {
     use std::vec;
 
     use super::*;
-
-    #[test]
-    fn test_get_phc_string() {
-        let password = "password123";
-        let phc_string = get_phc_string(password);
-        assert_ne!(phc_string, password);
-    }
-
-    #[test]
-    fn test_verify_password() {
-        let password = "password123";
-        let phc_string = get_phc_string(password);
-        assert!(verify_password(password, &phc_string));
-    }
 
     #[test]
     fn test_sign_token() {

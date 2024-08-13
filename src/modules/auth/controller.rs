@@ -8,12 +8,18 @@ use crate::util::{
     self,
     error::CustomError::{InternalError, UnauthorizedError},
 };
+use crate::AppState;
 
 #[post("/login")]
-pub async fn login(request: HttpRequest, credentials: web::Json<LoginPayload>) -> impl Responder {
+pub async fn login(
+    request: HttpRequest,
+    data: web::Data<AppState>,
+    credentials: web::Json<LoginPayload>,
+) -> impl Responder {
     let credentials = credentials.into_inner();
     let username = credentials.username.trim();
     let password = credentials.password.trim();
+    let conn = &data.conn;
 
     let origin = util::auth_utils::get_header_value_str(&request, header::REFERER, "");
     if username.is_empty() || password.is_empty() {
@@ -23,7 +29,7 @@ pub async fn login(request: HttpRequest, credentials: web::Json<LoginPayload>) -
         });
     }
 
-    let result = UserService::select_user_by_username(username)
+    let result = UserService::select_user_by_username(conn, username)
         .await
         .map_err(|e| InternalError {
             message: e.to_string(),
@@ -35,7 +41,8 @@ pub async fn login(request: HttpRequest, credentials: web::Json<LoginPayload>) -
         });
     }
     let user = result.unwrap();
-    let is_verified = util::auth_utils::verify_aes_password(password, user.password.as_str());
+    let is_verified =
+        util::auth_utils::verify_aes_password(password, user.password.unwrap().as_str());
     if !is_verified {
         return Err(UnauthorizedError {
             realm: origin.to_owned(),

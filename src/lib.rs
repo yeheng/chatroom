@@ -1,7 +1,13 @@
+use sea_orm::DatabaseConnection;
+
 pub mod config;
-pub mod util;
 pub mod middleware;
-pub mod modules;
 pub mod model;
+pub mod modules;
+pub mod util;
 pub mod websocket;
-pub mod models;
+
+#[derive(Debug, Clone)]
+pub struct AppState {
+    pub conn: DatabaseConnection,
+}

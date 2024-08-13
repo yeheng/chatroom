@@ -2,8 +2,8 @@ use actix_http::header;
 use actix_web::dev::ServiceRequest;
 use actix_web::error::ErrorBadRequest;
 use actix_web::{dev, FromRequest, HttpRequest};
+use chrono::{Local, Timelike};
 use futures_util::future::{self, LocalBoxFuture};
-use rbatis::rbdc::DateTime;
 
 use crate::util;
 use crate::util::error::CustomError::UnauthorizedError;
@@ -14,7 +14,7 @@ pub struct Claim {
     pub exp: usize,
     // 可选，签发人
     pub iss: String,
-    pub id: u32,
+    pub id: i64,
     pub username: String,
     pub permissions: Vec<String>,
 }
@@ -62,7 +62,7 @@ pub async fn validator(
     };
 
     let result = util::auth_utils::validate_token(&token, origin);
-    let now = DateTime::now().unix_timestamp() as usize;
+    let now = Local::now().nanosecond() as usize;
     match result {
         Ok(claims) if now < claims.exp => Ok(req),
         Ok(_) => {

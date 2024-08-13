@@ -25,10 +25,8 @@ serde_urlencoded = "0.7"
 fancy-regex = "0.13"
 
 # rbatis
-rbs = { version = "4.5" }
-rbatis = { version = "4.5" }
-rbatis-codegen = { version = "4.5" }
-rbdc-pg = { version = "4.5" }
+sea-orm = { version = "1.0.0-rc.5", features = ["sqlx-postgres", "macros", "runtime-tokio-rustls", "with-chrono", "with-json"] }
+chrono = { version = "0.4", features = ["serde"] }
 
 # logging
 log = "0.4"
@@ -45,8 +43,9 @@ lazy_static = "1.5.0"
 fastdate = "0.3"
 futures-util = "0.3"
 uuid = { version = "1", features = ["v4", "fast-rng"] }
-base64 = "0.21"
+base64 = "0.22"
 openssl = "0.10"
+once_cell = "1"
 
 # tracing
 tracing = "0.1.19"

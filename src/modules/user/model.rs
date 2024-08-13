@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::SysUser;
+use crate::model::sys_user;
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct NewUser {
@@ -11,12 +11,12 @@ pub struct NewUser {
 
 #[derive(Debug, Deserialize)]
 pub struct UpdateUserPayload {
-    pub user: SysUser,
+    pub user: sys_user::Model,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct UserVO {
-    pub user_id: u32,
+    pub user_id: i64,
     pub username: String,
     pub nickname: String,
     pub permissions: Vec<String>,
