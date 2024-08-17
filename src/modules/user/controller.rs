@@ -27,7 +27,7 @@ pub async fn get_user_info(
         .map_err(|e| InternalError {
             message: e.to_string(),
         })?;
-    Ok(ResponseData::new("user", user))
+    Ok(ResponseData::data(user))
 }
 
 #[get("")]
@@ -52,9 +52,9 @@ pub async fn get_current_user(
         };
         Ok(ResponseData::data(data))
     } else {
-        return Err(InternalError {
+        Err(InternalError {
             message: "Unauthorized".to_owned(),
-        });
+        })
     }
 }
 

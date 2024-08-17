@@ -6,19 +6,25 @@ run-name: 🚀${{ gitea.actor }} 构建发布包到开发环境
 jobs:
 
   cicd:
-    runs-on: ubuntu-latest
+    runs-on: "ubuntu-latest"
+    env:
+      CARGO_TERM_COLOR: always
     steps:
-      - name: 🚀Checkout代码
+      - name: Checkout代码
         uses: actions/checkout@v4
-      
-      - name: 🚀运行cargo check检查代码
+
+      - name: 安装rust工具链
         uses: actions-rust-lang/setup-rust-toolchain@v1
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ runner.os }}-cargo
+
+      - name: 运行cargo check检查代码
         run: cargo check
 
-      - name: 🚀运行cargo test跑ut
-        uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: 运行cargo test跑ut
         run: cargo test
 
-      - name: 🚀运行cargo build构建release包
-        uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: 运行cargo build构建release包
         run: cargo build

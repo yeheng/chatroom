@@ -1,4 +1,4 @@
 [database]
-url = "postgres://postgres:123456@localhost:5432/tzw-live"
+url = "postgres://postgres:123456@localhost:5432/tzw-live-2"
 pool_size = 32
 pool_timeout = 60

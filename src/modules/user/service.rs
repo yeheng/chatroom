@@ -24,7 +24,9 @@ impl UserService {
         let key = format!("user:id:{}", uid);
         let mut conn: Connection = redis_conn!();
         match conn.get::<String, String>(key.clone()) {
-            Ok(user) => Ok(Some(serde_json::from_str::<sys_user::Model>(&user).unwrap())),
+            Ok(user) => Ok(Some(
+                serde_json::from_str::<sys_user::Model>(&user).unwrap(),
+            )),
             Err(_) => {
                 let user = sys_user::Entity::find()
                     .filter(sys_user::Column::UserId.eq(uid))
@@ -32,9 +34,10 @@ impl UserService {
                     .await?;
 
                 if user.is_some() {
-                    conn.set::<String, String, String>(
+                    conn.set_ex::<String, String, String>(
                         key.clone(),
                         serde_json::to_string(&user).unwrap(),
+                        3600,
                     )
                     .unwrap();
                 }
@@ -51,7 +54,9 @@ impl UserService {
         let key = format!("user:username:{}", username);
         let mut conn: Connection = redis_conn!();
         match conn.get::<String, String>(key.clone()) {
-            Ok(user) => Ok(Some(serde_json::from_str::<sys_user::Model>(&user).unwrap())),
+            Ok(user) => Ok(Some(
+                serde_json::from_str::<sys_user::Model>(&user).unwrap(),
+            )),
             Err(_) => {
                 let user = sys_user::Entity::find()
                     .filter(sys_user::Column::UserName.eq(username))
@@ -59,9 +64,18 @@ impl UserService {
                     .await?;
 
                 if user.is_some() {
-                    conn.set::<String, String, String>(
+                    conn.set_ex::<String, String, String>(
                         key.clone(),
                         serde_json::to_string(&user).unwrap(),
+                        3600,
+                    )
+                    .unwrap();
+
+                    let key = format!("user:id:{}", user.as_ref().unwrap().user_id);
+                    conn.set_ex::<String, String, String>(
+                        key.clone(),
+                        serde_json::to_string(&user).unwrap(),
+                        3600,
                     )
                     .unwrap();
                 }
