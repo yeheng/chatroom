@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-  build:
+  check:
     name: 🚀运行cargo check检查代码
     runs-on: ubuntu-latest
     steps:
