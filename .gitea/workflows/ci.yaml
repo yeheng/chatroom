@@ -1,19 +1,25 @@
-on: [ pull_request ]
+on: [ push ]
 
-name: Continuous integration
+name: 构建发布包到开发环境
+run-name: 🚀${{ gitea.actor }} 构建发布包到开发环境
 
 jobs:
 
-  check:
-    name: Check
+  checkout:
+    name: 🚀Checkout代码
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      
+  build:
+    name: 🚀运行cargo check检查代码
+    runs-on: ubuntu-latest
+    steps:
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - run: cargo check
 
   test:
-    name: Test Suite
+    name: 🚀运行cargo test跑ut
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,7 +27,7 @@ jobs:
       - run: cargo test
 
   build:
-    name: build
+    name: 🚀运行cargo build构建release包
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
