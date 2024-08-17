@@ -5,31 +5,20 @@ run-name: 🚀${{ gitea.actor }} 构建发布包到开发环境
 
 jobs:
 
-  checkout:
-    name: 🚀Checkout代码
+  cicd:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: 🚀Checkout代码
+        uses: actions/checkout@v4
       
-  check:
-    name: 🚀运行cargo check检查代码
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
-      - run: cargo check
+      - name: 🚀运行cargo check检查代码
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        run: cargo check
 
-  test:
-    name: 🚀运行cargo test跑ut
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
-      - run: cargo test
+      - name: 🚀运行cargo test跑ut
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        run: cargo test
 
-  build:
-    name: 🚀运行cargo build构建release包
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
-      - run: cargo build
+      - name: 🚀运行cargo build构建release包
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        run: cargo build
