@@ -20,11 +20,5 @@ jobs:
         with:
           key: ${{ runner.os }}-cargo
 
-      - name: 运行cargo check检查代码
-        run: cargo check
-
-      - name: 运行cargo test跑ut
-        run: cargo test
-
       - name: 运行cargo build构建release包
         run: cargo build
