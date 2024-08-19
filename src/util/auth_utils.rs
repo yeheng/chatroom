@@ -37,7 +37,7 @@ pub fn verify_aes_password(password: &str, password_hash: &str) -> bool {
     password == String::from_utf8(decrypt).unwrap()
 }
 
-// 签发 token
+/// 签发 token
 ///
 /// # Arguments
 ///
@@ -73,7 +73,7 @@ pub fn sign_token(
     Ok(token)
 }
 
-// 验证 Token
+/// 验证 Token
 ///
 /// # Arguments
 ///
@@ -99,7 +99,7 @@ pub fn validate_token(token: &str, host: &str) -> Result<Claim, actix_web::Error
     Ok(result.claims)
 }
 
-// 从 HttpRequest 请求中获取指定的请求头
+/// 从 HttpRequest 请求中获取指定的请求头
 ///
 /// # Arguments
 ///

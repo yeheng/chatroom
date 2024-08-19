@@ -1,10 +1,11 @@
 use jsonwebtoken::{DecodingKey, EncodingKey};
 use lazy_static::lazy_static;
 pub use log as app_log;
-use crate::config::config::{ApplicationConfig, JwtKey};
+use crate::config::model::{ApplicationConfig, JwtKey};
 
 pub mod config;
 pub mod log;
+pub mod model;
 
 lazy_static! {
     pub static ref CONFIG: ApplicationConfig = ApplicationConfig::new();

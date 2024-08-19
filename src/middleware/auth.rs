@@ -25,11 +25,12 @@ pub struct RealWorldToken {
     pub token: String,
 }
 
-///Whether the interface is in the whitelist
+///接口是否在白名单中
 pub async fn validator(
     req: ServiceRequest,
     credentials: actix_web::Result<RealWorldToken>,
 ) -> Result<ServiceRequest, (actix_web::Error, ServiceRequest)> {
+    // 获取请求头中的 Referer 值
     let origin = util::auth_utils::get_header_value_str(req.request(), header::REFERER, "");
     let token = match credentials {
         Err(e) => {
@@ -39,7 +40,7 @@ pub async fn validator(
                     realm: origin.to_owned(),
                     message: e.to_string(),
                 }
-                .into(),
+                    .into(),
                 req,
             ));
         }
@@ -55,12 +56,13 @@ pub async fn validator(
                     realm: origin.to_owned(),
                     message: "Invalid header value".to_owned(),
                 }
-                .into(),
+                    .into(),
                 req,
             ))
         }
     };
 
+    // 验证 Token
     let result = util::auth_utils::validate_token(&token, origin);
     let now = Local::now().nanosecond() as usize;
     match result {
@@ -83,6 +85,7 @@ impl FromRequest for RealWorldToken {
     type Future = future::Ready<actix_web::Result<Self, Self::Error>>;
 
     fn from_request(request: &HttpRequest, _payload: &mut dev::Payload) -> Self::Future {
+        // 获取请求头中的 Authorization 值
         let authorization = request.headers().get(header::AUTHORIZATION);
         if authorization.is_none() {
             return future::err(ErrorBadRequest("Authentication required!"));
@@ -113,9 +116,11 @@ impl FromRequest for Claim {
     fn from_request(request: &HttpRequest, _payload: &mut dev::Payload) -> Self::Future {
         let request = request.to_owned();
         Box::pin(async move {
+            // 提取 Token
             let RealWorldToken { token, .. } = RealWorldToken::extract(&request).await?;
             let origin = util::auth_utils::get_header_value_str(&request, header::REFERER, "");
 
+            // 验证 Token 并返回 Claims
             util::auth_utils::validate_token(&token, origin)
         })
     }
