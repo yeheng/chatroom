@@ -14,41 +14,58 @@ use tracing_actix_web::TracingLogger;
 
 use chatroom::{middleware, modules, websocket};
 
+// 定义一个异步函数来创建并配置服务器
 pub async fn get_server() -> Server {
+    // 格式化服务器地址
     let address = format!("{}:{}", &CONFIG.host, &CONFIG.port);
 
+    // 记录服务器运行地址
     log::info!(
         "Server running at http://{}",
         format!("{}:{}", CONFIG.host, CONFIG.port)
     );
 
+    // 连接数据源
     let conn = middleware::datasource::connect().await;
+    // 创建应用状态
     let state = AppState { conn };
 
+    // 创建并配置 HTTP 服务器
     HttpServer::new(move || {
         App::new()
+            // 添加应用状态
             .app_data(web::Data::new(state.clone()))
+            // 设置 JSON 配置,限制请求体大小
             .app_data(web::JsonConfig::default().limit(4096))
-            .wrap(TracingLogger::default())
-            .wrap(Logger::default())
-            .wrap(Cors::permissive())
-            .wrap(DefaultHeaders::new().add(header::ContentType::json()))
-            .wrap(NormalizePath::trim())
+            // 添加中间件
+            .wrap(TracingLogger::default()) // 追踪日志
+            .wrap(Logger::default()) // 默认日志
+            .wrap(Cors::permissive()) // CORS 策略
+            .wrap(DefaultHeaders::new().add(header::ContentType::json())) // 默认响应头
+            .wrap(NormalizePath::trim()) // 规范化路径
             .wrap(
                 ErrorHandlers::new().handler(StatusCode::BAD_REQUEST, middleware::format_response),
-            )
+            ) // 错误处理
+            // 添加 WebSocket 路由
             .service(web::resource("/ws").to(websocket::chat_ws))
+            // 配置其他路由
             .configure(modules::route::router)
     })
-    .bind(address.clone())
-    .expect(&format!("Can not bind to {}", address))
-    .run()
+        // 绑定服务器地址
+        .bind(address.clone())
+        .expect(&format!("Can not bind to {}", address))
+        // 运行服务器
+        .run()
 }
 
+// 主函数
 #[actix_web::main]
 async fn main() {
+    // 初始化日志
     app_log::init_log();
 
+    // 获取服务器实例
     let server = get_server();
+    // 启动服务器并等待其完成
     server.await.await.expect("server start failed");
 }

@@ -13,6 +13,15 @@ use crate::middleware::auth::Claim;
 use crate::util::error::CustomError;
 
 /// 校验密码和哈希
+///
+/// # Arguments
+///
+/// * `password` - 明文密码
+/// * `password_hash` - 加密后的密码哈希
+///
+/// # Returns
+///
+/// * `bool` - 返回密码是否匹配
 pub fn verify_aes_password(password: &str, password_hash: &str) -> bool {
     let cipher = Cipher::aes_128_ecb();
 
@@ -22,13 +31,23 @@ pub fn verify_aes_password(password: &str, password_hash: &str) -> bool {
         None,
         STANDARD.decode(password_hash).unwrap().as_slice(),
     )
-    .map_err(|e| e.to_string())
-    .unwrap();
+        .map_err(|e| e.to_string())
+        .unwrap();
 
     password == String::from_utf8(decrypt).unwrap()
 }
 
 // 签发 token
+///
+/// # Arguments
+///
+/// * `id` - 用户 ID
+/// * `username` - 用户名
+/// * `permissions` - 用户权限列表
+///
+/// # Returns
+///
+/// * `Result<String, actix_web::Error>` - 返回签发的 token 或错误
 pub fn sign_token(
     id: i64,
     username: String,
@@ -55,6 +74,15 @@ pub fn sign_token(
 }
 
 // 验证 Token
+///
+/// # Arguments
+///
+/// * `token` - 需要验证的 token
+/// * `host` - 请求的主机地址
+///
+/// # Returns
+///
+/// * `Result<Claim, actix_web::Error>` - 返回 token 的声明或错误
 pub fn validate_token(token: &str, host: &str) -> Result<Claim, actix_web::Error> {
     let mut validation = Validation::new(Algorithm::EdDSA);
     validation.validate_exp = true;
@@ -72,6 +100,16 @@ pub fn validate_token(token: &str, host: &str) -> Result<Claim, actix_web::Error
 }
 
 // 从 HttpRequest 请求中获取指定的请求头
+///
+/// # Arguments
+///
+/// * `request` - HTTP 请求
+/// * `name` - 请求头名称
+/// * `default_value` - 默认值
+///
+/// # Returns
+///
+/// * `&'a str` - 返回请求头的值或默认值
 pub fn get_header_value_str<'a>(
     request: &'a HttpRequest,
     name: HeaderName,
