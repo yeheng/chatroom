@@ -1,27 +1,15 @@
-use actix_web::web::{self, ServiceConfig};
-use actix_web_httpauth::middleware::HttpAuthentication;
-use crate::middleware;
+use actix_web::web::ServiceConfig;
 
-use crate::modules::auth::controller::*;
-use crate::modules::user::controller::*;
+use crate::modules::*;
 
+/// 配置路由
+///
+/// # 参数
+///
+/// * `config` - 一个可变的 ServiceConfig 引用，用于配置服务
 pub fn router(config: &mut ServiceConfig) {
-    config.service(login);
-    config.service(
-        web::scope("/api")
-            .service(
-                web::scope("/user")
-                    .wrap(HttpAuthentication::with_fn(middleware::auth::validator))
-                    .service(get_user_info)
-                    .service(get_current_user)
-                    .service(update_user)
-            )
-
-            // .service(
-            //     web::scope("/profiles")
-            //         .wrap(HttpAuthentication::with_fn(middleware::auth::validator))
-            //         .service(profile::follow_user)
-            //         .service(profile::unfollow_user)
-            // )
-    );
+    // 配置认证模块的路由
+    auth::router(config);
+    // 配置用户模块的路由
+    user::router(config);
 }
