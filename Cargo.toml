@@ -21,7 +21,6 @@ actix-broker = "0.4"
 #jwt
 argon2 = "0.5"
 jsonwebtoken = { version = "9", features = ["use_pem"] }
-serde_urlencoded = "0.7"
 fancy-regex = "0.13"
 
 # rbatis
@@ -36,10 +35,10 @@ fast_log = "1.6"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 derive_more = "1"
+serde_urlencoded = "0.7"
 
 # utils
 config = "0.14.0"
-lazy_static = "1.5.0"
 fastdate = "0.3"
 futures-util = "0.3"
 uuid = { version = "1", features = ["v4", "fast-rng"] }

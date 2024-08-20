@@ -1,12 +1,10 @@
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 use redis::Client;
 
 use crate::config::CONFIG;
 
-lazy_static! {
-    // 定义一个全局的 Redis 实例
-    pub static ref REDIS: Redis = Redis::default();
-}
+// 定义一个全局的 Redis 实例
+pub static REDIS: Lazy<Redis> = Lazy::new(|| Redis::default());
 
 pub struct Redis {
     pub client: Client,
@@ -21,11 +19,13 @@ impl Default for Redis {
     }
 }
 
-
 #[macro_export]
 macro_rules! redis_conn {
     () => {
-         // 获取 Redis 连接
-        $crate::middleware::redis::REDIS.client.get_connection().unwrap()
+        // 获取 Redis 连接
+        $crate::middleware::redis::REDIS
+            .client
+            .get_connection()
+            .unwrap()
     };
 }
