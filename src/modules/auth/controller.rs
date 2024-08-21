@@ -1,64 +1,27 @@
-use actix_web::{http::header, post, web, HttpRequest, Responder};
+use actix_web::{post, web, Responder};
 
 use crate::middleware::ResponseData;
 use crate::modules::auth::model::LoginPayload;
-use crate::modules::user::model::UserVO;
-use crate::modules::user::UserService;
-use crate::util::{
-    self,
-    error::CustomError::{InternalError, UnauthorizedError},
-};
+use crate::modules::auth::SERVICE;
 use crate::AppState;
+
+use crate::util::error::CustomError::UnauthorizedError;
 
 #[post("/login")]
 pub async fn login(
-    request: HttpRequest,
     data: web::Data<AppState>,
     credentials: web::Json<LoginPayload>,
 ) -> impl Responder {
     let credentials = credentials.into_inner();
-    let username = credentials.username.trim();
-    let password = credentials.password.trim();
     let conn = &data.conn;
 
-    let origin = util::auth_utils::get_header_value_str(&request, header::REFERER, "");
-    if username.is_empty() || password.is_empty() {
-        return Err(UnauthorizedError {
-            realm: origin.to_owned(),
-            message: "`username` and `password` is required".to_owned(),
-        });
-    }
+    let user = SERVICE.login(conn, credentials).await;
 
-    let result = UserService::select_user_by_username(conn, username)
-        .await
-        .map_err(|e| InternalError {
-            message: e.to_string(),
-        })?;
-    if result.is_none() {
+    if user.is_ok() {
+        Ok(ResponseData::data(user.unwrap()))
+    } else {
         return Err(UnauthorizedError {
-            realm: origin.to_owned(),
-            message: "Incorrect username or password".to_owned(),
+            message: user.unwrap_err().to_string(),
         });
     }
-    let user = result.unwrap();
-    let is_verified =
-        util::auth_utils::verify_aes_password(password, user.password.unwrap().as_str());
-    if !is_verified {
-        return Err(UnauthorizedError {
-            realm: origin.to_owned(),
-            message: "Incorrect username or password".to_owned(),
-        });
-    }
-    // 密码校验通过，签发 Token
-    // todo: 获取用户权限
-    let token = util::auth_utils::sign_token(user.user_id, user.user_name, vec![]).unwrap();
-    let user = Some(UserVO {
-        user_id: user.user_id,
-        username: username.to_owned(),
-        nickname: user.nick_name,
-        permissions: vec![],
-        token: Some(token),
-    });
-
-    Ok(ResponseData::data(user))
 }

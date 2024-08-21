@@ -6,7 +6,6 @@ use actix_web::{
     HttpResponse,
 };
 use derive_more::derive::{Display, Error};
-use log::debug;
 use serde_json::json;
 
 #[derive(Debug, Display, Error)]
@@ -15,7 +14,7 @@ pub enum CustomError {
     ValidationError { message: String },
 
     #[display("Unauthorized: {}", message)]
-    UnauthorizedError { realm: String, message: String },
+    UnauthorizedError { message: String },
 
     #[display("Internal error: {}", message)]
     InternalError { message: String },
@@ -35,18 +34,9 @@ impl error::ResponseError for CustomError {
     fn error_response(&self) -> HttpResponse {
         let mut builder = HttpResponse::build(self.status_code());
 
-        if let CustomError::UnauthorizedError { realm, message, .. } = self {
-            debug!("错误消息 ==> {}", message);
-            let error_message = format!(
-                "Token realm=\"{}\", error=\"Unauthorized\", error_description=\"{}\"",
-                realm, message
-            );
-            builder.insert_header(("WWW-Authenticate", error_message.as_str()));
-        }
-
         let response_message = json!({
             "error": {
-                "body": [self.to_string()]
+                "body": self.to_string()
             }
         })
         .to_string();

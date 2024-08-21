@@ -31,16 +31,13 @@ pub async fn validator(
     credentials: actix_web::Result<RealWorldToken>,
 ) -> Result<ServiceRequest, (actix_web::Error, ServiceRequest)> {
     // 获取请求头中的 Referer 值
-    let origin = util::auth_utils::get_header_value_str(req.request(), header::REFERER, "");
     let token = match credentials {
         Err(e) => {
             log::debug!("解析token出错 ==> {:#?}", e);
             return Err((
                 UnauthorizedError {
-                    realm: origin.to_owned(),
                     message: e.to_string(),
-                }
-                    .into(),
+                }.into(),
                 req,
             ));
         }
@@ -53,24 +50,21 @@ pub async fn validator(
         _ => {
             return Err((
                 UnauthorizedError {
-                    realm: origin.to_owned(),
                     message: "Invalid header value".to_owned(),
-                }
-                    .into(),
+                }.into(),
                 req,
             ))
         }
     };
 
     // 验证 Token
-    let result = util::auth_utils::validate_token(&token, origin);
+    let result = util::auth_utils::validate_token(&token);
     let now = Local::now().nanosecond() as usize;
     match result {
         Ok(claims) if now < claims.exp => Ok(req),
         Ok(_) => {
             log::warn!("Token 已过期！");
             let error = UnauthorizedError {
-                realm: origin.to_owned(),
                 message: "Token expired".to_owned(),
             };
             Err((error.into(), req))
@@ -118,10 +112,9 @@ impl FromRequest for Claim {
         Box::pin(async move {
             // 提取 Token
             let RealWorldToken { token, .. } = RealWorldToken::extract(&request).await?;
-            let origin = util::auth_utils::get_header_value_str(&request, header::REFERER, "");
 
             // 验证 Token 并返回 Claims
-            util::auth_utils::validate_token(&token, origin)
+            util::auth_utils::validate_token(&token)
         })
     }
 }

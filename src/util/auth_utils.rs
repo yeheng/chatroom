@@ -83,7 +83,7 @@ pub fn sign_token(
 /// # Returns
 ///
 /// * `Result<Claim, actix_web::Error>` - 返回 token 的声明或错误
-pub fn validate_token(token: &str, host: &str) -> Result<Claim, actix_web::Error> {
+pub fn validate_token(token: &str) -> Result<Claim, actix_web::Error> {
     let mut validation = Validation::new(Algorithm::EdDSA);
     validation.validate_exp = true;
     validation.set_issuer(&[CONFIG.jwt.issuer.to_owned().as_str()]);
@@ -91,7 +91,6 @@ pub fn validate_token(token: &str, host: &str) -> Result<Claim, actix_web::Error
     let result =
         jsonwebtoken::decode::<Claim>(token, &JWT_KEY.decoding_key, &validation).map_err(|e| {
             CustomError::UnauthorizedError {
-                realm: host.to_owned(),
                 message: e.to_string(),
             }
         })?;
@@ -143,7 +142,7 @@ mod tests {
         let username = "admin".to_owned();
         let permissions = vec!["admin".to_owned()];
         let token = sign_token(id, username.clone(), permissions).unwrap();
-        let claim = validate_token(&token, "localhost").unwrap();
+        let claim = validate_token(&token).unwrap();
         assert_eq!(claim.username, username);
     }
 }
