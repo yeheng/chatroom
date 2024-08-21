@@ -7,7 +7,13 @@ key = "0000001511179138"
 [database]
 url = "postgres://postgres:123456@localhost:5432/postgres"
 pool_size = 32
-pool_timeout = 60
+min_connections = 5
+pool_timeout = "60s"
+connect_timeout = "8s"                                     # 设置连接超时时间
+acquire_timeout = "8s"                                     # 设置获取连接超时时间
+idle_timeout = "8s"                                        # 设置空闲连接超时时间
+sqlx_logging = true                                        # 启用 SQLx 日志记录
+sqlx_logging_level = "info"                                # 设置 SQLx 日志记录级别
 
 [redis]
 url = "redis://127.0.0.1:6379/0"
@@ -44,4 +50,3 @@ password_error = "密码不正确"
 vcode_error = "验证码不正确"
 req_frequently = "操作过于频繁,请等待{}秒后重试"
 id_empty = "id不能为空"
-
