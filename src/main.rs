@@ -4,7 +4,6 @@ use chatroom::config::{app_log, CONFIG};
 
 use actix_cors::Cors;
 use actix_http::StatusCode;
-use actix_web::dev::Server;
 use actix_web::http::header;
 use actix_web::middleware::{DefaultHeaders, ErrorHandlers, Logger};
 use actix_web::web::{self};
@@ -14,8 +13,13 @@ use tracing_actix_web::TracingLogger;
 
 use chatroom::{middleware, modules, websocket};
 
-// 定义一个异步函数来创建并配置服务器
-pub async fn get_server() -> Server {
+// 主函数
+#[actix_web::main]
+async fn main() {
+    // 初始化日志
+    app_log::init_log();
+
+    // 获取服务器实例
     // 格式化服务器地址
     let address = format!("{}:{}", &CONFIG.host, &CONFIG.port);
 
@@ -25,10 +29,8 @@ pub async fn get_server() -> Server {
         format!("{}:{}", CONFIG.host, CONFIG.port)
     );
 
-    // 连接数据源
-    let conn = middleware::datasource::connect().await;
     // 创建应用状态
-    let state = AppState { conn };
+    let state = AppState::new().await;
 
     // 创建并配置 HTTP 服务器
     HttpServer::new(move || {
@@ -51,21 +53,11 @@ pub async fn get_server() -> Server {
             // 配置其他路由
             .configure(modules::route::router)
     })
-        // 绑定服务器地址
-        .bind(address.clone())
-        .expect(&format!("Can not bind to {}", address))
-        // 运行服务器
-        .run()
-}
-
-// 主函数
-#[actix_web::main]
-async fn main() {
-    // 初始化日志
-    app_log::init_log();
-
-    // 获取服务器实例
-    let server = get_server();
-    // 启动服务器并等待其完成
-    server.await.await.expect("server start failed");
+    // 绑定服务器地址
+    .bind(address.clone())
+    .expect(&format!("Can not bind to {}", address))
+    // 运行服务器
+    .run()
+    .await
+    .expect("Failed to run server");
 }

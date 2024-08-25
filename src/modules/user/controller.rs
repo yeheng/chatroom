@@ -15,14 +15,13 @@ pub async fn get_user_info(
     claims: Claim,
 ) -> impl Responder {
     let uid = path.into_inner();
-    let conn = &data.conn;
     if uid != claims.id {
         return Err(InternalError {
             message: "Unauthorized".to_owned(),
         });
     }
 
-    let user = UserService::select_user_by_uid(conn, uid)
+    let user = UserService::select_user_by_uid(data, uid)
         .await
         .map_err(|e| InternalError {
             message: e.to_string(),
@@ -36,8 +35,7 @@ pub async fn get_current_user(
     data: web::Data<AppState>,
     claims: Claim,
 ) -> impl Responder {
-    let conn = &data.conn;
-    let mut user = UserService::select_user_by_uid(conn, claims.id)
+    let mut user = UserService::select_user_by_uid(data, claims.id)
         .await
         .map_err(|e| InternalError {
             message: e.to_string(),
@@ -67,7 +65,6 @@ pub async fn update_user(
 ) -> impl Responder {
     let mut user: sys_user::Model = user.into_inner().user;
     let uid = path.into_inner();
-    let conn = &data.conn;
 
     if uid != claims.id {
         return Err(InternalError {
@@ -77,7 +74,7 @@ pub async fn update_user(
 
     user.user_id = claims.id;
 
-    let result = UserService::update_user(conn, &user)
+    let result = UserService::update_user(data.clone(), &user)
         .await
         .map_err(|e| InternalError {
             message: e.to_string(),
@@ -87,7 +84,7 @@ pub async fn update_user(
             message: "Update may not be successful".to_owned(),
         });
     }
-    let user = UserService::select_user_by_uid(conn, claims.id)
+    let user = UserService::select_user_by_uid(data.clone(), claims.id)
         .await
         .map_err(|e| InternalError {
             message: e.to_string(),

@@ -2,11 +2,11 @@
 
 use crate::model::sys_user;
 use crate::modules::user::model::NewUser;
-use crate::redis_conn;
+use crate::AppState;
+use actix_web::web;
 use redis::{Commands, Connection};
 use sea_orm::ConnectionTrait;
 use sea_orm::DatabaseBackend;
-use sea_orm::DatabaseConnection;
 use sea_orm::QueryResult;
 use sea_orm::Statement;
 use sea_orm::Value;
@@ -18,11 +18,13 @@ pub struct UserService {}
 // Implement methods for the service struct
 impl UserService {
     pub async fn select_user_by_uid(
-        con: &DatabaseConnection,
+        data: web::Data<AppState>,
         uid: i64,
     ) -> Result<Option<sys_user::Model>, sea_orm::DbErr> {
+        let con = &data.conn;
+        let redis_client = &data.redis;
         let key = format!("user:id:{}", uid);
-        let mut conn: Connection = redis_conn!();
+        let mut conn: Connection = redis_client.get_connection().unwrap();
         match conn.get::<String, String>(key.clone()) {
             Ok(user) => Ok(Some(
                 serde_json::from_str::<sys_user::Model>(&user).unwrap(),
@@ -48,11 +50,13 @@ impl UserService {
     }
 
     pub async fn select_user_by_username(
-        con: &DatabaseConnection,
+        data: web::Data<AppState>,
         username: &str,
     ) -> Result<Option<sys_user::Model>, DbErr> {
+        let con = &data.conn;
+        let redis_client = &data.redis;
         let key = format!("user:username:{}", username);
-        let mut conn: Connection = redis_conn!();
+        let mut conn: Connection = redis_client.get_connection().unwrap();
         match conn.get::<String, String>(key.clone()) {
             Ok(user) => Ok(Some(
                 serde_json::from_str::<sys_user::Model>(&user).unwrap(),
@@ -85,9 +89,10 @@ impl UserService {
     }
 
     pub async fn is_uname_already_exists(
-        con: &DatabaseConnection,
+        data: web::Data<AppState>,
         uname: &str,
     ) -> Result<bool, DbErr> {
+        let con = &data.conn;
         let query_res: Option<QueryResult> = con
             .query_one(Statement::from_sql_and_values(
                 DatabaseBackend::Postgres,
@@ -105,7 +110,8 @@ impl UserService {
         }
     }
 
-    pub async fn insert_new_user(con: &DatabaseConnection, u: &NewUser) -> Result<u64, DbErr> {
+    pub async fn insert_new_user(data: web::Data<AppState>, u: &NewUser) -> Result<u64, DbErr> {
+        let con = &data.conn;
         let exec_result = con
             .execute(Statement::from_sql_and_values(
                 DatabaseBackend::Postgres,
@@ -121,7 +127,8 @@ impl UserService {
         Ok(exec_result.last_insert_id())
     }
 
-    pub async fn update_user(con: &DatabaseConnection, u: &sys_user::Model) -> Result<u64, DbErr> {
+    pub async fn update_user(data: web::Data<AppState>, u: &sys_user::Model) -> Result<u64, DbErr> {
+        let con = &data.conn;
         let exec_result = con
             .execute(Statement::from_sql_and_values(
                 DatabaseBackend::Postgres,

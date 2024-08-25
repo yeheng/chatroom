@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 /// ## 数据库配置
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Database {
     pub url: String,                // 数据库连接 URL
     pub pool_size: usize,           // 连接池大小
@@ -17,14 +17,14 @@ pub struct Database {
 }
 
 /// ## Redis 配置
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Redis {
     // Redis 连接 URL
     pub url: String,
 }
 
 /// ## JWT 配置
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Jwt {
     pub secret: String,       // JWT 密钥
     pub exp: usize,           // JWT 过期时间
@@ -35,7 +35,7 @@ pub struct Jwt {
 }
 
 /// ## App配置
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ApplicationConfig {
     pub port: u16,                                    // 端口号
     pub host: String,                                 // 主机地址

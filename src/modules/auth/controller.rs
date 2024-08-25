@@ -13,9 +13,8 @@ pub async fn login(
     credentials: web::Json<LoginPayload>,
 ) -> impl Responder {
     let credentials = credentials.into_inner();
-    let conn = &data.conn;
 
-    let user = SERVICE.login(conn, credentials).await;
+    let user = SERVICE.login(data, credentials).await;
 
     if user.is_ok() {
         Ok(ResponseData::data(user.unwrap()))

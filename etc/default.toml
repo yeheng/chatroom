@@ -12,7 +12,7 @@ pool_timeout = "60s"
 connect_timeout = "8s"                                     # 设置连接超时时间
 acquire_timeout = "8s"                                     # 设置获取连接超时时间
 idle_timeout = "8s"                                        # 设置空闲连接超时时间
-sqlx_logging = true                                        # 启用 SQLx 日志记录
+sqlx_logging = false                                       # 启用 SQLx 日志记录
 sqlx_logging_level = "info"                                # 设置 SQLx 日志记录级别
 
 [redis]

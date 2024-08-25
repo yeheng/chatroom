@@ -21,7 +21,7 @@ pub enum CustomError {
 }
 
 // 为自定义错误实现 ResponseError 以可返回 HTTP 错误
-// 这里 Clion 显示错误，但实际上 build 是没有问题的
+// 这里 Clion 显示错误,但实际上 build 是没有问题的
 impl error::ResponseError for CustomError {
     fn status_code(&self) -> StatusCode {
         match *self {

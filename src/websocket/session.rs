@@ -3,21 +3,26 @@ use actix_broker::BrokerIssue;
 use actix_web_actors::ws;
 use uuid::Uuid;
 
-use crate::websocket::{
-    model::{ChatMessage, JoinRoom, LeaveRoom, ListRooms, SendMessage},
-    server::WsChatServer,
-};
+use crate::websocket::model::{ChatMessage, JoinRoom, LeaveRoom, ListRooms, SendMessage};
 
-#[derive(Default)]
+use super::server::WS_SERVER;
+
+#[derive(Default, Clone)]
 pub struct WsChatSession {
-    id: Uuid,
-    room: String,
-    name: Option<String>,
+    pub id: Uuid,
+    pub room: String,
+    pub name: Option<String>,
+}
+
+impl WsChatSession {
+    pub fn new(id: Uuid, room: String, name: Option<String>) -> Self {
+        Self { id, room, name }
+    }
 }
 
 // `WsChatSession` 结构体表示 WebSocket 聊天会话。
 impl WsChatSession {
-    // 加入房间，如果需要则离开当前房间。
+    // 加入房间,如果需要则离开当前房间。
     pub fn join_room(&mut self, room_name: &str, ctx: &mut ws::WebsocketContext<Self>) {
         let room_name = room_name.to_owned();
 
@@ -33,7 +38,7 @@ impl WsChatSession {
         );
 
         // 更新会话的房间和 ID。
-        WsChatServer::from_registry()
+        WS_SERVER
             .send(join_msg)
             .into_actor(self)
             .then(|id, act, _ctx| {
@@ -49,7 +54,7 @@ impl WsChatSession {
 
     // 列出所有房间。
     pub fn list_rooms(&mut self, ctx: &mut ws::WebsocketContext<Self>) {
-        WsChatServer::from_registry()
+        WS_SERVER
             .send(ListRooms)
             .into_actor(self)
             .then(|res, _, ctx| {
@@ -100,7 +105,7 @@ impl Actor for WsChatSession {
 impl Handler<ChatMessage> for WsChatSession {
     type Result = ();
 
-    // 处理 `ChatMessage` 消息，将消息发送给客户端。
+    // 处理 `ChatMessage` 消息,将消息发送给客户端。
     fn handle(&mut self, msg: ChatMessage, ctx: &mut Self::Context) {
         ctx.text(msg.0);
     }

@@ -7,7 +7,7 @@ use config::{Config, Environment, File};
 impl ApplicationConfig {
     // 创建新的ApplicationConfig实例
     pub fn new() -> Self {
-        // 从环境变量获取运行模式，默认为"dev"
+        // 从环境变量获取运行模式,默认为"dev"
         let run_mode = env::var("RUN_MODE").unwrap_or_else(|_| "dev".into());
 
         // 构建配置
@@ -49,7 +49,7 @@ impl ApplicationConfig {
         self.error_infos = Some(HashMap::new());
         for (k, error) in &self.errors {
             let mut error = error.to_string();
-            // 如果错误信息包含逗号，只取逗号前的部分
+            // 如果错误信息包含逗号,只取逗号前的部分
             if error.contains(",") {
                 error = error[0..error.find(",").unwrap()].to_string();
             }

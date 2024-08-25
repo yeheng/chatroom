@@ -5,52 +5,53 @@ edition = "2021"
 
 [dependencies]
 
-tokio = { version = "1", features = ["full"] }
+tokio = { version = "1.39.3", features = ["full"] }
 
 # actix web
 actix = "0.13.5"
-actix-web = "4"
-actix-http = "3"
-actix-cors = "0.7"
-actix-web-httpauth = "0.8"
-actix-web-lab = "0.22"
-tracing-actix-web = "0.7"
-actix-web-actors = "4.3.0"
-actix-broker = "0.4"
+actix-web = "4.9.0"
+actix-http = "3.9.0"
+actix-cors = "0.7.0"
+actix-web-httpauth = "0.8.2"
+actix-web-lab = "0.22.0"
+tracing-actix-web = "0.7.11"
+actix-web-actors = "4.3"
+actix-broker = "0.4.3"
 
 #jwt
-argon2 = "0.5"
-jsonwebtoken = { version = "9", features = ["use_pem"] }
-fancy-regex = "0.13"
+argon2 = "0.5.3"
+jsonwebtoken = { version = "9.3.0", features = ["use_pem"] }
+fancy-regex = "0.13.0"
 
 # rbatis
-sea-orm = { version = "1.0.0-rc.5", features = ["sqlx-postgres", "macros", "runtime-tokio-rustls", "with-chrono", "with-json"] }
-chrono = { version = "0.4", features = ["serde"] }
+sea-orm = { version = "1.0.0", features = ["sqlx-postgres", "macros", "runtime-tokio-rustls", "with-chrono", "with-json"] }
+chrono = { version = "0.4.38", features = ["serde"] }
 
 # logging
-log = "0.4"
-fast_log = "1.6"
+log = "0.4.22"
+fast_log = "1.7.3"
 
 # serialization
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-derive_more = "1"
+serde = { version = "1.0.208", features = ["derive"] }
+serde_json = "1.0.125"
+derive_more = "1.0.0"
 # utils
 config = "0.14.0"
-fastdate = "0.3"
-futures-util = "0.3"
-uuid = { version = "1", features = ["v4", "fast-rng"] }
-base64 = "0.22"
-openssl = "0.10"
-once_cell = "1"
-anyhow = "1.0"
+fastdate = "0.3.32"
+futures-util = "0.3.30"
+uuid = { version = "1.10.0", features = ["v4", "fast-rng"] }
+base64 = "0.22.1"
+openssl = "0.10.66"
+once_cell = "1.19.0"
+anyhow = "1.0.86"
 
 # tracing
-tracing = "0.1.19"
-tracing-subscriber = { version = "0.3", features = ["registry", "env-filter"] }
-tracing-appender = "0.2"
-tracing-log = "0.2"
-tracing-error = "0.2"
+tracing = "0.1.40"
+tracing-subscriber = { version = "0.3.18", features = ["registry", "env-filter"] }
+tracing-appender = "0.2.3"
+tracing-log = "0.2.0"
+tracing-error = "0.2.0"
 
 # redis with tokio
 redis = { version = "0.26.1", features = ["tokio-comp", "json"] }
+rdkafka = "0.36.2"
