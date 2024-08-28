@@ -21,8 +21,9 @@ impl UserService {
         data: web::Data<AppState>,
         uid: i64,
     ) -> Result<Option<sys_user::Model>, sea_orm::DbErr> {
-        let con = &data.conn;
-        let redis_client = &data.redis;
+        let app_state = data.get_ref();
+        let con = app_state.get_conn();
+        let redis_client = app_state.get_redis();
         let key = format!("user:id:{}", uid);
         let mut conn: Connection = redis_client.get_connection().unwrap();
         match conn.get::<String, String>(key.clone()) {
@@ -41,7 +42,7 @@ impl UserService {
                         serde_json::to_string(&user).unwrap(),
                         3600,
                     )
-                    .unwrap();
+                        .unwrap();
                 }
 
                 Ok(user)
@@ -53,8 +54,9 @@ impl UserService {
         data: web::Data<AppState>,
         username: &str,
     ) -> Result<Option<sys_user::Model>, DbErr> {
-        let con = &data.conn;
-        let redis_client = &data.redis;
+        let app_state = data.get_ref();
+        let con = app_state.get_conn();
+        let redis_client = app_state.get_redis();
         let key = format!("user:username:{}", username);
         let mut conn: Connection = redis_client.get_connection().unwrap();
         match conn.get::<String, String>(key.clone()) {
@@ -73,7 +75,7 @@ impl UserService {
                         serde_json::to_string(&user).unwrap(),
                         3600,
                     )
-                    .unwrap();
+                        .unwrap();
 
                     let key = format!("user:id:{}", user.as_ref().unwrap().user_id);
                     conn.set_ex::<String, String, String>(
@@ -81,7 +83,7 @@ impl UserService {
                         serde_json::to_string(&user).unwrap(),
                         3600,
                     )
-                    .unwrap();
+                        .unwrap();
                 }
                 Ok(user)
             }
@@ -92,7 +94,8 @@ impl UserService {
         data: web::Data<AppState>,
         uname: &str,
     ) -> Result<bool, DbErr> {
-        let con = &data.conn;
+        let app_state = data.get_ref();
+        let con = app_state.get_conn();
         let query_res: Option<QueryResult> = con
             .query_one(Statement::from_sql_and_values(
                 DatabaseBackend::Postgres,
@@ -111,7 +114,8 @@ impl UserService {
     }
 
     pub async fn insert_new_user(data: web::Data<AppState>, u: &NewUser) -> Result<u64, DbErr> {
-        let con = &data.conn;
+        let app_state = data.get_ref();
+        let con = app_state.get_conn();
         let exec_result = con
             .execute(Statement::from_sql_and_values(
                 DatabaseBackend::Postgres,
@@ -128,7 +132,8 @@ impl UserService {
     }
 
     pub async fn update_user(data: web::Data<AppState>, u: &sys_user::Model) -> Result<u64, DbErr> {
-        let con = &data.conn;
+        let app_state = data.get_ref();
+        let con = app_state.get_conn();
         let exec_result = con
             .execute(Statement::from_sql_and_values(
                 DatabaseBackend::Postgres,

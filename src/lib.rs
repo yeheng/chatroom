@@ -10,16 +10,22 @@ pub mod websocket;
 
 #[derive(Debug, Clone)]
 pub struct AppState {
-    pub conn: DatabaseConnection,
-    pub redis: Client,
+    conn: DatabaseConnection,
+    redis: Client,
 }
 
 impl AppState {
-
     pub async fn new() -> Self {
         let conn = middleware::datasource::connect().await;
         let redis = middleware::redis::connect();
         Self { conn, redis }
     }
 
+    pub fn get_conn(&self) -> &DatabaseConnection {
+        &self.conn
+    }
+
+    pub fn get_redis(&self) -> &Client {
+        &self.redis
+    }
 }

@@ -21,7 +21,7 @@ pub async fn connect() -> DatabaseConnection {
         .sqlx_logging_level(parse_log_level(&CONFIG.database.sqlx_logging_level)); // 设置 SQLx 日志记录级别
     let r = Database::connect(opt).await;
     match r {
-        Ok(_) => r.unwrap(),
+        Ok(conn) => conn,
         Err(e) => {
             log::error!("Failed to connect to the database, reason: {:?}", e); // 记录连接失败的错误信息
             std::process::exit(1); // 退出程序
@@ -43,7 +43,9 @@ fn parse_log_level(sqlx_logging_level: &str) -> log::LevelFilter {
 fn parse_duration(log_rolling: &str) -> Duration {
     let lower = log_rolling.to_lowercase();
     let unit = lower.chars().last().unwrap();
-    let number = lower.trim_end_matches(unit).parse::<u64>().unwrap();
+    let number = lower.trim_end_matches(unit).parse::<u64>().unwrap_or_else(|_| {
+        panic!("Invalid duration format: {}", log_rolling);
+    });
     let duration = match unit.to_string().as_str() {
         "d" => Duration::from_day(number),
         "h" => Duration::from_hour(number),

@@ -3,7 +3,7 @@ use anyhow::anyhow;
 
 use crate::{
     modules::user::{model::UserVO, UserService},
-    util::{self},
+    util::auth_utils::{sign_token, verify_aes_password},
     AppState,
 };
 
@@ -27,13 +27,13 @@ impl AuthService {
         }
         let user = result.unwrap();
         let is_verified =
-            util::auth_utils::verify_aes_password(passwd_raw, user.password.unwrap().as_str());
+            verify_aes_password(passwd_raw, user.password.unwrap().as_str());
         if !is_verified {
             return Err(anyhow!("Incorrect username or password").into());
         }
         // 密码校验通过,签发 Token
         // todo: 获取用户权限
-        let token = util::auth_utils::sign_token(user.user_id, user.user_name, vec![]).unwrap();
+        let token = sign_token(user.user_id, user.user_name, vec![]).unwrap();
         let user = Some(UserVO {
             user_id: user.user_id,
             username: username.to_owned(),

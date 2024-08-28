@@ -19,8 +19,8 @@ pub async fn login(
     if user.is_ok() {
         Ok(ResponseData::data(user.unwrap()))
     } else {
-        return Err(UnauthorizedError {
+        Err(UnauthorizedError {
             message: user.unwrap_err().to_string(),
-        });
+        })
     }
 }
