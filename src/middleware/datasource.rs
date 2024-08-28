@@ -50,5 +50,5 @@ fn parse_duration(log_rolling: &str) -> Duration {
         "m" => Duration::from_minute(number),
         _ => Duration::from_secs(number),
     };
-    return duration;
+    duration
 }
