@@ -6,7 +6,7 @@ run-name: 🚀${{ gitea.actor }} 构建发布包到开发环境
 jobs:
 
   cicd:
-    runs-on: "ubuntu-latest"
+    runs-on: "nas-linux"
     env:
       CARGO_TERM_COLOR: always
     steps:
