@@ -9,7 +9,6 @@ use serde_json::json;
 pub mod auth;
 pub mod datasource;
 pub mod redis;
-pub mod kafka;
 
 // 统一响应结构体
 #[derive(Debug, serde::Serialize)]
