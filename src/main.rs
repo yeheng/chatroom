@@ -3,15 +3,15 @@ use actix_web::{App, HttpServer};
 use chatroom::config::{app_log, CONFIG};
 
 use actix_cors::Cors;
-use actix_http::StatusCode;
 use actix_web::http::header;
-use actix_web::middleware::{DefaultHeaders, ErrorHandlers, Logger};
+use actix_web::middleware::{DefaultHeaders, Logger};
 use actix_web::web::{self};
 use actix_web_lab::middleware::NormalizePath;
+use chatroom::util::error::CustomError;
 use chatroom::AppState;
 use tracing_actix_web::TracingLogger;
 
-use chatroom::{middleware, modules, websocket};
+use chatroom::{modules, websocket};
 
 // 主函数
 #[actix_web::main]
@@ -38,16 +38,25 @@ async fn main() {
             // 添加应用状态
             .app_data(web::Data::new(state.clone()))
             // 设置 JSON 配置,限制请求体大小
-            .app_data(web::JsonConfig::default().limit(4096))
+            .app_data(
+                web::JsonConfig::default()
+                    .limit(4096)
+                    .error_handler(|err, _req| {
+                        CustomError::ValidationError {
+                            field: err.to_string(),
+                        }
+                        .into()
+                    }),
+            )
             // 添加中间件
             .wrap(TracingLogger::default()) // 追踪日志
             .wrap(Logger::default()) // 默认日志
             .wrap(Cors::permissive()) // CORS 策略
             .wrap(DefaultHeaders::new().add(header::ContentType::json())) // 默认响应头
             .wrap(NormalizePath::trim()) // 规范化路径
-            .wrap(
-                ErrorHandlers::new().handler(StatusCode::BAD_REQUEST, middleware::format_response),
-            ) // 错误处理
+            // .wrap(
+            //     ErrorHandlers::new().handler(StatusCode::BAD_REQUEST, middleware::format_response),
+            // ) // 错误处理
             // 添加 WebSocket 路由
             .service(web::resource("/ws").to(websocket::chat_ws))
             // 配置其他路由

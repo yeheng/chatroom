@@ -5,28 +5,24 @@ use crate::middleware::ResponseData;
 use crate::model::sys_user;
 use crate::modules::user::model::{UpdateUserPayload, UserVO};
 use crate::modules::user::UserService;
-use crate::util::error::CustomError::InternalError;
+use crate::util::error::CustomError::{InternalError, NotFound};
 use crate::AppState;
 
 #[get("/{uid}")]
-pub async fn get_user_info(
-    path: web::Path<i64>,
-    data: web::Data<AppState>,
-    claims: Claim,
-) -> impl Responder {
+pub async fn get_user_info(path: web::Path<i64>, data: web::Data<AppState>) -> impl Responder {
     let uid = path.into_inner();
-    if uid != claims.id {
-        return Err(InternalError {
-            message: "Unauthorized".to_owned(),
-        });
-    }
-
     let user = UserService::select_user_by_uid(data, uid)
         .await
         .map_err(|e| InternalError {
             message: e.to_string(),
-        })?;
-    Ok(ResponseData::data(user))
+        });
+    match user {
+        Ok(Some(u)) => Ok(ResponseData::data(u)),
+        Ok(None) => Err(NotFound {
+            message: format!("User with id:{}", uid).to_owned(),
+        }),
+        Err(e) => Err(e),
+    }
 }
 
 #[get("")]
