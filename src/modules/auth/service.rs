@@ -1,9 +1,11 @@
 use actix_web::web;
-use anyhow::anyhow;
 
 use crate::{
     modules::user::{model::UserVO, UserService},
-    util::auth_utils::{sign_token, verify_aes_password},
+    util::{
+        auth_utils::{sign_token, verify_aes_password},
+        error::CustomError,
+    },
     AppState,
 };
 
@@ -16,20 +18,22 @@ impl AuthService {
         &self,
         data: web::Data<AppState>,
         credentials: LoginPayload,
-    ) -> Result<Option<UserVO>, anyhow::Error> {
+    ) -> Result<Option<UserVO>, CustomError> {
         let username = credentials.username.trim();
         let passwd_raw = credentials.password.trim();
         let result = UserService::select_user_by_username(data, username)
-            .await
-            .map_err(|e| anyhow!("InternalError: {}", e.to_string()))?;
+            .await?;
         if result.is_none() {
-            return Err(anyhow!("User {:?} not found", username).into());
+            return Err(CustomError::NotFound {
+                message: format!("User {:?} not found", username).into(),
+            });
         }
         let user = result.unwrap();
-        let is_verified =
-            verify_aes_password(passwd_raw, user.password.unwrap().as_str());
+        let is_verified = verify_aes_password(passwd_raw, user.password.unwrap().as_str());
         if !is_verified {
-            return Err(anyhow!("Incorrect username or password").into());
+            return Err(CustomError::UnauthorizedError {
+                message: "Incorrect username or password".into(),
+            });
         }
         // 密码校验通过,签发 Token
         // todo: 获取用户权限

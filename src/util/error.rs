@@ -31,6 +31,9 @@ pub enum CustomError {
 
     #[display("{} Not found!", message)]
     NotFound { message: String },
+
+    #[display("{}", message)]
+    DbErr {message: String}
 }
 
 impl CustomError {
@@ -41,6 +44,7 @@ impl CustomError {
             CustomError::UnauthorizedError { .. } => "Unauthorized".to_string(),
             CustomError::BadClientData => "Bad request".to_string(),
             CustomError::NotFound { .. } => "Not found".to_string(),
+            CustomError::DbErr { .. } => "DB Error".to_string(),
         }
     }
 }
@@ -55,6 +59,7 @@ impl error::ResponseError for CustomError {
             CustomError::UnauthorizedError { .. } => StatusCode::UNAUTHORIZED,
             CustomError::BadClientData => StatusCode::BAD_REQUEST,
             CustomError::NotFound { .. } => StatusCode::NOT_FOUND,
+            CustomError::DbErr { .. } => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 

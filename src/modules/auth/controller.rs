@@ -16,11 +16,11 @@ pub async fn login(
 
     let user = SERVICE.login(data, credentials).await;
 
-    if user.is_ok() {
-        Ok(ResponseData::data(user.unwrap()))
-    } else {
-        Err(UnauthorizedError {
+    match user {
+        Ok(Some(user)) => Ok(ResponseData::data(user)),
+        Ok(None) => Err(UnauthorizedError {
             message: user.unwrap_err().to_string(),
-        })
+        }),
+        Err(e) => Err(e),
     }
 }

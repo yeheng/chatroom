@@ -2,15 +2,15 @@
 
 use crate::model::sys_user;
 use crate::modules::user::model::NewUser;
+use crate::util::error::CustomError;
 use crate::AppState;
 use actix_web::web;
 use redis::{Commands, Connection};
 use sea_orm::ConnectionTrait;
 use sea_orm::DatabaseBackend;
-use sea_orm::QueryResult;
 use sea_orm::Statement;
 use sea_orm::Value;
-use sea_orm::{ColumnTrait, DbErr, EntityTrait, QueryFilter};
+use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 
 // Define the service struct
 pub struct UserService {}
@@ -20,7 +20,7 @@ impl UserService {
     pub async fn select_user_by_uid(
         data: web::Data<AppState>,
         uid: i64,
-    ) -> Result<Option<sys_user::Model>, sea_orm::DbErr> {
+    ) -> Result<Option<sys_user::Model>, CustomError> {
         let app_state = data.get_ref();
         let con = app_state.get_conn();
         let redis_client = app_state.get_redis();
@@ -34,7 +34,10 @@ impl UserService {
                 let user = sys_user::Entity::find()
                     .filter(sys_user::Column::UserId.eq(uid))
                     .one(con)
-                    .await?;
+                    .await
+                    .map_err(|e| CustomError::DbErr {
+                        message: e.to_string(),
+                    })?;
 
                 if user.is_some() {
                     conn.set_ex::<String, String, String>(
@@ -42,7 +45,7 @@ impl UserService {
                         serde_json::to_string(&user).unwrap(),
                         3600,
                     )
-                        .unwrap();
+                    .unwrap();
                 }
 
                 Ok(user)
@@ -53,7 +56,7 @@ impl UserService {
     pub async fn select_user_by_username(
         data: web::Data<AppState>,
         username: &str,
-    ) -> Result<Option<sys_user::Model>, DbErr> {
+    ) -> Result<Option<sys_user::Model>, CustomError> {
         let app_state = data.get_ref();
         let con = app_state.get_conn();
         let redis_client = app_state.get_redis();
@@ -67,7 +70,10 @@ impl UserService {
                 let user = sys_user::Entity::find()
                     .filter(sys_user::Column::UserName.eq(username))
                     .one(con)
-                    .await?;
+                    .await
+                    .map_err(|e| CustomError::DbErr {
+                        message: e.to_string(),
+                    })?;
 
                 if user.is_some() {
                     conn.set_ex::<String, String, String>(
@@ -75,7 +81,7 @@ impl UserService {
                         serde_json::to_string(&user).unwrap(),
                         3600,
                     )
-                        .unwrap();
+                    .unwrap();
 
                     let key = format!("user:id:{}", user.as_ref().unwrap().user_id);
                     conn.set_ex::<String, String, String>(
@@ -83,7 +89,7 @@ impl UserService {
                         serde_json::to_string(&user).unwrap(),
                         3600,
                     )
-                        .unwrap();
+                    .unwrap();
                 }
                 Ok(user)
             }
@@ -93,27 +99,35 @@ impl UserService {
     pub async fn is_uname_already_exists(
         data: web::Data<AppState>,
         uname: &str,
-    ) -> Result<bool, DbErr> {
+    ) -> Result<bool, CustomError> {
         let app_state = data.get_ref();
         let con = app_state.get_conn();
-        let query_res: Option<QueryResult> = con
+        let query_res = con
             .query_one(Statement::from_sql_and_values(
                 DatabaseBackend::Postgres,
                 r#"SELECT count(1) AS count FROM "sys_user" WHERE username = ?"#,
                 [uname.into()],
             ))
-            .await?;
+            .await
+            .map_err(|e| CustomError::DbErr {
+                message: e.to_string(),
+            })?;
 
         match query_res {
             Some(qr) => {
-                let count: i64 = qr.try_get("", "count")?;
+                let count: i64 = qr.try_get("", "count").map_err(|e| CustomError::DbErr {
+                    message: e.to_string(),
+                })?;
                 Ok(count > 0)
             }
             None => Ok(false),
         }
     }
 
-    pub async fn insert_new_user(data: web::Data<AppState>, u: &NewUser) -> Result<u64, DbErr> {
+    pub async fn insert_new_user(
+        data: web::Data<AppState>,
+        u: &NewUser,
+    ) -> Result<u64, CustomError> {
         let app_state = data.get_ref();
         let con = app_state.get_conn();
         let exec_result = con
@@ -126,12 +140,18 @@ impl UserService {
                     u.password.as_bytes().into(),
                 ],
             ))
-            .await?;
+            .await
+            .map_err(|e| CustomError::DbErr {
+                message: e.to_string(),
+            })?;
 
         Ok(exec_result.last_insert_id())
     }
 
-    pub async fn update_user(data: web::Data<AppState>, u: &sys_user::Model) -> Result<u64, DbErr> {
+    pub async fn update_user(
+        data: web::Data<AppState>,
+        u: &sys_user::Model,
+    ) -> Result<u64, CustomError> {
         let app_state = data.get_ref();
         let con = app_state.get_conn();
         let exec_result = con
@@ -150,7 +170,10 @@ impl UserService {
                     Value::from(u.user_id),
                 ],
             ))
-            .await?;
+            .await
+            .map_err(|e| CustomError::DbErr {
+                message: e.to_string(),
+            })?;
 
         Ok(exec_result.rows_affected())
     }
