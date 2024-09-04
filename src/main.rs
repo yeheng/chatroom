@@ -54,9 +54,6 @@ async fn main() {
             .wrap(Cors::permissive()) // CORS 策略
             .wrap(DefaultHeaders::new().add(header::ContentType::json())) // 默认响应头
             .wrap(NormalizePath::trim()) // 规范化路径
-            // .wrap(
-            //     ErrorHandlers::new().handler(StatusCode::BAD_REQUEST, middleware::format_response),
-            // ) // 错误处理
             // 添加 WebSocket 路由
             .service(web::resource("/ws").to(websocket::chat_ws))
             // 配置其他路由

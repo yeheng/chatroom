@@ -1,9 +1,6 @@
-use actix_http::body::BoxBody;
-use actix_http::{header, StatusCode};
-use actix_web::http::header::ContentType;
-use actix_web::middleware::ErrorHandlerResponse;
-use actix_web::{dev, HttpRequest, HttpResponse, Responder};
+use actix_web::{http::header::ContentType, HttpRequest, HttpResponse, Responder};
 use fancy_regex::Regex;
+use serde::Serialize;
 use serde_json::json;
 
 pub mod auth;
@@ -11,9 +8,10 @@ pub mod datasource;
 pub mod redis;
 
 // 统一响应结构体
-#[derive(Debug, serde::Serialize)]
+#[derive(Debug, Serialize)]
 pub struct ResponseData {
-    pub body: String,
+    pub data: String,
+    pub code: u16,
 }
 
 impl ResponseData {
@@ -22,7 +20,8 @@ impl ResponseData {
         T: serde::Serialize,
     {
         Self {
-            body: json!({property_name: data}).to_string(),
+            data: json!({property_name: data}).to_string(),
+            code: 200,
         }
     }
 
@@ -31,7 +30,8 @@ impl ResponseData {
         T: serde::Serialize,
     {
         Self {
-            body: json!(data).to_string(),
+            data: json!(data).to_string(),
+            code: 200,
         }
     }
 
@@ -63,35 +63,6 @@ impl Responder for ResponseData {
         // Create HttpResponse and set Content Type
         HttpResponse::Ok()
             .content_type(ContentType::json())
-            .body(self.body)
+            .body(self.data)
     }
-}
-
-pub fn format_response<B>(
-    mut response: dev::ServiceResponse<B>,
-) -> actix_web::Result<ErrorHandlerResponse<B>> {
-    // 重写请求头的 content-type
-    response.response_mut().headers_mut().insert(
-        header::CONTENT_TYPE,
-        header::HeaderValue::from_static("application/json; charset=utf-8"),
-    );
-    // 重写 Http StatusCode 为 422
-    response.response_mut().head_mut().status = StatusCode::UNPROCESSABLE_ENTITY;
-    // 获取框架的错误信息
-    let error_message: String = match response.response().error() {
-        Some(e) => e.to_string(),
-        None => String::from("Unknown Error"),
-    };
-    // 格式化响应体为要求的返回格式
-    let body = json!({
-        "error": {
-            "body": [error_message]
-        }
-    })
-    .to_string();
-    let new_response = response.map_body(move |_head, _body| BoxBody::new(body));
-
-    Ok(ErrorHandlerResponse::Response(
-        new_response.map_into_right_body(),
-    ))
 }
