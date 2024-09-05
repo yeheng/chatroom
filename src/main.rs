@@ -43,9 +43,9 @@ async fn main() {
                     .limit(4096)
                     .error_handler(|err, _req| {
                         CustomError::ValidationError {
-                            field: err.to_string(),
+                            message: format!("JSON validation error: {}", err),
                         }
-                        .into()
+                            .into()
                     }),
             )
             // 添加中间件
@@ -59,11 +59,17 @@ async fn main() {
             // 配置其他路由
             .configure(modules::route::router)
     })
-    // 绑定服务器地址
-    .bind(address.clone())
-    .expect(&format!("Can not bind to {}", address))
-    // 运行服务器
-    .run()
-    .await
-    .expect("Failed to run server");
+        // 绑定服务器地址
+        .bind(address.clone())
+        .map_err(|e| {
+            log::error!("Failed to bind to {}: {}", address, e);
+            std::process::exit(1);
+        })
+        // 运行服务器
+        .run()
+        .await
+        .map_err(|e| {
+            log::error!("Failed to run server: {}", e);
+            std::process::exit(1);
+        })?;
 }
