@@ -17,7 +17,7 @@ struct FormattedErrorResponse {
 
 #[derive(Debug, Display, Error)]
 pub enum CustomError {
-    #[display("Validation error: {}", field)]
+    #[display("Validation error: {}", message)]
     ValidationError { message: String },
 
     #[display("Unauthorized: {}", message)]
