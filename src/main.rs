@@ -9,8 +9,11 @@ use actix_web::web::{self};
 use actix_web_lab::middleware::NormalizePath;
 use chatroom::util::error::CustomError;
 use chatroom::AppState;
+use tokio::task::spawn;
+use tokio::try_join;
 use tracing_actix_web::TracingLogger;
 
+use chatroom::websocket::server::ChatServer;
 use chatroom::{modules, websocket};
 
 // 主函数
@@ -32,11 +35,16 @@ async fn main() {
     // 创建应用状态
     let state = AppState::new().await;
 
+    let (chat_server, server_tx) = ChatServer::new();
+
+    let chat_server = spawn(chat_server.run());
+
     // 创建并配置 HTTP 服务器
-    HttpServer::new(move || {
+    let http_server = HttpServer::new(move || {
         App::new()
             // 添加应用状态
             .app_data(web::Data::new(state.clone()))
+            .app_data(web::Data::new(server_tx.clone()))
             // 设置 JSON 配置,限制请求体大小
             .app_data(
                 web::JsonConfig::default()
@@ -64,12 +72,15 @@ async fn main() {
         .map_err(|e| {
             log::error!("Failed to bind to {}: {}", address, e);
             std::process::exit(1);
-        })
+        }).expect("REASON")
         // 运行服务器
-        .run()
-        .await
+        .run();
+
+    try_join!(http_server, async move { chat_server.await.unwrap() })
         .map_err(|e| {
-            log::error!("Failed to run server: {}", e);
+            log::error!("Failed to start server: {}", e);
             std::process::exit(1);
-        })?;
+        })
+        .unwrap();
+
 }

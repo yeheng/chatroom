@@ -1,27 +1,39 @@
-use actix::prelude::*;
-use uuid::Uuid;
+use tokio::sync::{mpsc, oneshot};
 
-#[derive(Clone, Message)]
-#[rtype(result = "()")]
-// 聊天消息结构体,包含一个字符串消息
-pub struct ChatMessage(pub String);
+/// Connection ID.
+pub type ConnId = uuid::Uuid;
 
-#[derive(Clone, Message)]
-#[rtype(result = "uuid::Uuid")]
-// 加入房间消息结构体,包含房间名、可选的用户名和消息接收者
-pub struct JoinRoom(pub String, pub Option<String>, pub Recipient<ChatMessage>);
+/// Room ID.
+pub type RoomId = String;
 
-#[derive(Clone, Message)]
-#[rtype(result = "()")]
-// 离开房间消息结构体,包含房间名和用户ID
-pub struct LeaveRoom(pub String, pub Uuid);
+/// Message sent to a room/client.
+pub type Msg = String;
 
-#[derive(Clone, Message)]
-#[rtype(result = "Vec<String>")]
-// 列出房间消息结构体
-pub struct ListRooms;
+/// A command received by the [`ChatServer`].
+#[derive(Debug)]
+pub enum Command {
+    Connect {
+        conn_tx: mpsc::UnboundedSender<Msg>,
+        res_tx: oneshot::Sender<ConnId>,
+    },
 
-#[derive(Clone, Message)]
-#[rtype(result = "()")]
-// 发送消息结构体,包含房间名、用户ID和消息内容
-pub struct SendMessage(pub String, pub Uuid, pub String);
+    Disconnect {
+        conn: ConnId,
+    },
+
+    List {
+        res_tx: oneshot::Sender<Vec<RoomId>>,
+    },
+
+    Join {
+        conn: ConnId,
+        room: RoomId,
+        res_tx: oneshot::Sender<()>,
+    },
+
+    Message {
+        msg: Msg,
+        conn: ConnId,
+        res_tx: oneshot::Sender<()>,
+    },
+}

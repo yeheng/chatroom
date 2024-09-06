@@ -1,140 +1,199 @@
-use std::collections::HashMap;
-
-use actix::prelude::*;
-use actix_broker::BrokerSubscribe;
-use once_cell::sync::Lazy;
+use std::{
+    collections::{HashMap, HashSet},
+    sync::{
+        atomic::AtomicUsize,
+        Arc,
+    },
+};
+use tokio::io;
 use uuid::Uuid;
 
-use crate::websocket::model::{ChatMessage, JoinRoom, LeaveRoom, ListRooms, SendMessage};
+use crate::websocket::model::{Command, ConnId, Msg, RoomId};
+use tokio::sync::{mpsc, oneshot, RwLock};
 
-pub static WS_SERVER: Lazy<actix::Addr<WsChatServer>> = Lazy::new(|| WsChatServer::from_registry());
+// 定义默认房间名称为常量
+const DEFAULT_ROOM_NAME: &str = "main";
 
-type Client = Recipient<ChatMessage>;
-type Room = HashMap<Uuid, Client>;
+#[derive(Debug)]
+pub struct ChatServer {
+    /// Map of connection IDs to their message receivers.
+    sessions: RwLock<HashMap<ConnId, mpsc::UnboundedSender<Msg>>>,
 
-#[derive(Default)]
-pub struct WsChatServer {
-    rooms: HashMap<String, Room>,
+    /// Map of room name to participant IDs in that room.
+    rooms: RwLock<HashMap<RoomId, HashSet<ConnId>>>,
+
+    /// Tracks total number of historical connections established.
+    visitor_count: Arc<AtomicUsize>,
+
+    /// Command receiver.
+    cmd_rx: mpsc::UnboundedReceiver<Command>,
 }
 
-// WsChatServer实现
-impl WsChatServer {
-    // 从self.rooms中获取一个房间,然后将该房间从self.rooms中移除并返回它。
-    fn take_room(&mut self, room_name: &str) -> Option<Room> {
-        let room = self.rooms.get_mut(room_name)?;
-        let room = std::mem::take(room);
-        Some(room)
+impl ChatServer {
+    pub fn new() -> (Self, ChatServerHandle) {
+        let rooms = HashMap::from([(DEFAULT_ROOM_NAME.to_owned(), HashSet::new())]);
+        let (cmd_tx, cmd_rx) = mpsc::unbounded_channel();
+
+        (
+            Self {
+                sessions: RwLock::new(HashMap::new()),
+                rooms: RwLock::new(rooms),
+                visitor_count: Arc::new(AtomicUsize::new(0)),
+                cmd_rx,
+            },
+            ChatServerHandle { cmd_tx },
+        )
     }
 
-    // 将一个客户端添加到一个房间中。如果房间不存在,则创建一个新房间。
-    fn add_client_to_room(&mut self, room_name: &str, id: Option<Uuid>, client: Client) -> Uuid {
-        let mut id = id.unwrap_or_else(|| Uuid::new_v4());
+    pub async fn send_system_message(&self, room: &str, skip: ConnId, msg: impl Into<Msg>) {
+        if let Some(participants) = self.rooms.read().await.get(room) {
+            let msg = msg.into();
+            let sessions_lock = self.sessions.write().await;
 
-        if let Some(room) = self.rooms.get_mut(room_name) {
-            loop {
-                if room.contains_key(&id) {
-                    id = Uuid::new_v4();
-                } else {
-                    break;
+            for conn_id in participants {
+                if *conn_id != skip {
+                    match sessions_lock.get(conn_id) {
+                        None => {
+                            log::warn!("Failed to find session for connection: {}", conn_id);
+                        }
+                        Some(tx) => {
+                            if let Err(e) = tx.send(msg.clone()) {
+                                log::error!("Failed to send message: {:?}", e);
+                            }
+                        }
+                    }
                 }
             }
-
-            room.insert(id, client);
-            return id;
         }
+    }
 
-        // Create a new room for the first client
-        let mut room: Room = HashMap::new();
+    async fn send_message(&self, conn: ConnId, msg: impl Into<Msg>) {
+        if let Some(room) = self.rooms.read().await.iter()
+            .find_map(|(room, participants)| participants.contains(&conn).then_some(room)) {
+            self.send_system_message(room, conn, msg).await;
+        }
+    }
 
-        room.insert(id, client);
-        self.rooms.insert(room_name.to_owned(), room);
+    async fn connect(&mut self, tx: mpsc::UnboundedSender<Msg>) -> ConnId {
+        log::info!("Someone joined");
+        let id = Uuid::new_v4();
+        self.sessions.write().await.insert(id, tx);
+        self.rooms.write().await.entry(DEFAULT_ROOM_NAME.to_owned()).or_default().insert(id);
+
+        self.visitor_count.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
 
         id
     }
 
-    /**
-     * 从self.rooms中获取一个房间,然后将该房间中的每个客户端都发送一个消息。
-     * 如果发送成功,则将客户端添加回房间中。
-     */
-    fn send_chat_message(&mut self, room_name: &str, msg: &str, _src: Uuid) -> Option<()> {
-        let mut room = self.take_room(room_name)?;
+    async fn disconnect(&mut self, conn_id: ConnId) {
+        log::info!("Someone disconnected");
 
-        for (id, client) in room.drain() {
-            if client.try_send(ChatMessage(msg.to_owned())).is_ok() {
-                self.add_client_to_room(room_name, Some(id), client);
+        let rooms = self.copy_write_rooms(conn_id)
+            .await;
+
+        self.visitor_count.fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
+
+        for room in rooms {
+            self.send_system_message(&room, conn_id, "Someone disconnected").await;
+        }
+    }
+
+    async fn list_rooms(&self) -> Vec<RoomId> {
+        self.rooms.read().await.keys().cloned().collect()
+    }
+
+    async fn copy_write_rooms(&mut self, conn_id: ConnId) -> Vec<RoomId> {
+        let mut rooms = Vec::new();
+        for (n, participants) in self.rooms.write().await.iter_mut() {
+            if participants.remove(&conn_id) {
+                rooms.push(n.to_owned());
+            }
+        }
+        rooms
+    }
+
+    async fn join_room(&mut self, conn_id: ConnId, room: RoomId) {
+        let rooms = self.copy_write_rooms(conn_id).await;
+
+        for room in rooms {
+            self.send_system_message(&room, conn_id, "Someone disconnected").await;
+        }
+
+        self.rooms.write().await.entry(room.clone()).or_default().insert(conn_id);
+        self.send_system_message(&room, conn_id, "Someone connected").await;
+    }
+
+    pub async fn run(mut self) -> io::Result<()> {
+        while let Some(cmd) = self.cmd_rx.recv().await {
+            match cmd {
+                Command::Connect { conn_tx, res_tx } => {
+                    let conn_id = self.connect(conn_tx).await;
+                    let _ = res_tx.send(conn_id);
+                }
+
+                Command::Disconnect { conn } => {
+                    self.disconnect(conn).await;
+                }
+
+                Command::List { res_tx } => {
+                    let _ = res_tx.send(self.list_rooms().await);
+                }
+
+                Command::Join { conn, room, res_tx } => {
+                    self.join_room(conn, room).await;
+                    let _ = res_tx.send(());
+                }
+
+                Command::Message { conn, msg, res_tx } => {
+                    self.send_message(conn, msg).await;
+                    let _ = res_tx.send(());
+                }
             }
         }
 
-        Some(())
+        Ok(())
     }
 }
 
-// 为WsChatServer实现Actor
-impl Actor for WsChatServer {
-    type Context = Context<Self>;
-
-    /**
-     * 在Actor启动时,我们订阅了LeaveRoom和SendMessage消息。
-     * 这样,我们就可以在Actor中处理这些消息。
-     */
-    fn started(&mut self, ctx: &mut Self::Context) {
-        self.subscribe_system_async::<LeaveRoom>(ctx);
-        self.subscribe_system_async::<SendMessage>(ctx);
-    }
+#[derive(Debug, Clone)]
+pub struct ChatServerHandle {
+    cmd_tx: mpsc::UnboundedSender<Command>,
 }
 
-/**
- * 为JoinRoom消息实现Handler trait。
- * 这个Handler trait的Result类型是MessageResult<JoinRoom>。
- * 这意味着我们将返回一个MessageResult,其中包含一个Uuid。
- */
-impl Handler<JoinRoom> for WsChatServer {
-    type Result = MessageResult<JoinRoom>;
+impl ChatServerHandle {
+    pub async fn connect(&self, conn_tx: mpsc::UnboundedSender<Msg>) -> ConnId {
+        let (res_tx, res_rx) = oneshot::channel();
+        self.cmd_tx.send(Command::Connect { conn_tx, res_tx }).unwrap();
+        res_rx.await.unwrap()
+    }
 
-    // 当处理JoinRoom消息时,我们将客户端添加到房间中,并返回一个MessageResult。
-    fn handle(&mut self, msg: JoinRoom, _ctx: &mut Self::Context) -> Self::Result {
-        let JoinRoom(room_name, client_name, client) = msg;
+    pub async fn list_rooms(&self) -> Vec<RoomId> {
+        let (res_tx, res_rx) = oneshot::channel();
+        self.cmd_tx.send(Command::List { res_tx }).unwrap();
+        res_rx.await.unwrap()
+    }
 
-        let id = self.add_client_to_room(&room_name, None, client);
-        let join_msg = format!(
-            "{} joined {room_name}",
-            client_name.unwrap_or_else(|| "anon".to_owned()),
-        );
+    pub async fn join_room(&self, conn: ConnId, room: impl Into<RoomId>) {
+        let (res_tx, res_rx) = oneshot::channel();
+        self.cmd_tx.send(Command::Join {
+            conn,
+            room: room.into(),
+            res_tx,
+        }).unwrap();
+        res_rx.await.unwrap();
+    }
 
-        self.send_chat_message(&room_name, &join_msg, id);
-        MessageResult(id)
+    pub async fn send_message(&self, conn: ConnId, msg: impl Into<Msg>) {
+        let (res_tx, res_rx) = oneshot::channel();
+        self.cmd_tx.send(Command::Message {
+            msg: msg.into(),
+            conn,
+            res_tx,
+        }).unwrap();
+        res_rx.await.unwrap();
+    }
+
+    pub fn disconnect(&self, conn: ConnId) {
+        self.cmd_tx.send(Command::Disconnect { conn }).unwrap();
     }
 }
-
-// 为LeaveRoom消息实现Handler
-impl Handler<LeaveRoom> for WsChatServer {
-    type Result = ();
-
-    fn handle(&mut self, msg: LeaveRoom, _ctx: &mut Self::Context) {
-        if let Some(room) = self.rooms.get_mut(&msg.0) {
-            room.remove(&msg.1);
-        }
-    }
-}
-
-// 为ListRooms消息实现Handler
-impl Handler<ListRooms> for WsChatServer {
-    type Result = MessageResult<ListRooms>;
-
-    fn handle(&mut self, _: ListRooms, _ctx: &mut Self::Context) -> Self::Result {
-        MessageResult(self.rooms.keys().cloned().collect())
-    }
-}
-
-// 为SendMessage消息实现Handler
-impl Handler<SendMessage> for WsChatServer {
-    type Result = ();
-
-    fn handle(&mut self, msg: SendMessage, _ctx: &mut Self::Context) {
-        let SendMessage(room_name, id, msg) = msg;
-        self.send_chat_message(&room_name, &msg, id);
-    }
-}
-
-impl SystemService for WsChatServer {}
-impl Supervised for WsChatServer {}

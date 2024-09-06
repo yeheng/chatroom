@@ -14,9 +14,7 @@ actix-http = "3.9.0"
 actix-cors = "0.7.0"
 actix-web-httpauth = "0.8.2"
 actix-web-lab = "0.22.0"
-tracing-actix-web = "0.7.11"
-actix-web-actors = "4.3"
-actix-broker = "0.4.3"
+actix-ws = "0.3.0"
 
 #jwt
 argon2 = "0.5.3"
@@ -50,6 +48,7 @@ tracing-subscriber = { version = "0.3.18", features = ["registry", "env-filter"]
 tracing-appender = "0.2.3"
 tracing-log = "0.2.0"
 tracing-error = "0.2.0"
+tracing-actix-web = "0.7.11"
 
 # redis with tokio
 redis = { version = "0.26.1", features = ["tokio-comp", "json"] }
