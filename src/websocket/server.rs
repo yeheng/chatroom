@@ -30,6 +30,7 @@ pub struct ChatServer {
 }
 
 impl ChatServer {
+
     pub fn new() -> (Self, ChatServerHandle) {
         let rooms = HashMap::from([(DEFAULT_ROOM_NAME.to_owned(), HashSet::new())]);
         let (cmd_tx, cmd_rx) = mpsc::unbounded_channel();
@@ -45,7 +46,7 @@ impl ChatServer {
         )
     }
 
-    pub async fn send_system_message(&self, room: &str, skip: ConnId, msg: impl Into<Msg>) {
+    async fn send_system_message(&self, room: &str, skip: ConnId, msg: impl Into<Msg>) {
         if let Some(participants) = self.rooms.read().await.get(room) {
             let msg = msg.into();
             let sessions_lock = self.sessions.write().await;
@@ -102,6 +103,7 @@ impl ChatServer {
         self.rooms.read().await.keys().cloned().collect()
     }
 
+    /// 从房间中移除连接并返回被移除的房间列表
     async fn copy_write_rooms(&mut self, conn_id: ConnId) -> Vec<RoomId> {
         let mut rooms = Vec::new();
         for (n, participants) in self.rooms.write().await.iter_mut() {
@@ -135,10 +137,6 @@ impl ChatServer {
                     self.disconnect(conn).await;
                 }
 
-                Command::List { res_tx } => {
-                    let _ = res_tx.send(self.list_rooms().await);
-                }
-
                 Command::Join { conn, room, res_tx } => {
                     self.join_room(conn, room).await;
                     let _ = res_tx.send(());
@@ -164,12 +162,6 @@ impl ChatServerHandle {
     pub async fn connect(&self, conn_tx: mpsc::UnboundedSender<Msg>) -> ConnId {
         let (res_tx, res_rx) = oneshot::channel();
         self.cmd_tx.send(Command::Connect { conn_tx, res_tx }).unwrap();
-        res_rx.await.unwrap()
-    }
-
-    pub async fn list_rooms(&self) -> Vec<RoomId> {
-        let (res_tx, res_rx) = oneshot::channel();
-        self.cmd_tx.send(Command::List { res_tx }).unwrap();
         res_rx.await.unwrap()
     }
 

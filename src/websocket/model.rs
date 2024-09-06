@@ -21,10 +21,6 @@ pub enum Command {
         conn: ConnId,
     },
 
-    List {
-        res_tx: oneshot::Sender<Vec<RoomId>>,
-    },
-
     Join {
         conn: ConnId,
         room: RoomId,

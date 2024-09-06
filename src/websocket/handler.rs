@@ -3,7 +3,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use actix_ws::AggregatedMessage;
+use actix_ws::AggregatedMessage::*;
 use futures_util::{
     future::{select, Either},
     StreamExt as _,
@@ -13,14 +13,13 @@ use tokio::{sync::mpsc, time::interval};
 use crate::websocket::model::ConnId;
 use crate::websocket::server::ChatServerHandle;
 
-/// How often heartbeat pings are sent
+/// 心跳间隔
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
 
-/// How long before lack of client response causes a timeout
+/// 客户端响应超时的时间间隔
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
 
-/// Echo text & binary messages received from the client, respond to ping messages, and monitor
-/// connection health to detect network issues and free up resources.
+/// 从客户端接收并回显文本和二进制消息,响应ping消息,并监控连接健康状况以检测网络问题并释放资源。
 pub async fn chat_ws(
     chat_server: ChatServerHandle,
     mut session: actix_ws::Session,
@@ -56,29 +55,27 @@ pub async fn chat_ws(
         match select(messages, tick).await {
             // commands & messages received from client
             Either::Left((Either::Left((Some(Ok(msg)), _)), _)) => {
-                log::info!("msg: {msg:?}");
-
                 match msg {
-                    AggregatedMessage::Ping(bytes) => {
+                    Ping(bytes) => {
                         last_heartbeat = Instant::now();
                         // unwrap:
                         session.pong(&bytes).await.unwrap();
                     }
 
-                    AggregatedMessage::Pong(_) => {
+                    Pong(_) => {
                         last_heartbeat = Instant::now();
                     }
 
-                    AggregatedMessage::Text(text) => {
+                    Text(text) => {
                         process_text_msg(&chat_server, &mut session, &text, conn_id, &mut name)
                             .await;
                     }
 
-                    AggregatedMessage::Binary(_bin) => {
+                    Binary(_bin) => {
                         log::warn!("unexpected binary message");
                     }
 
-                    AggregatedMessage::Close(reason) => break reason,
+                    Close(reason) => break reason,
                 }
             }
 
@@ -137,47 +134,22 @@ async fn process_text_msg(
     if msg.starts_with('/') {
         let mut cmd_args = msg.splitn(2, ' ');
 
-        // unwrap: we have guaranteed non-zero string length already
-        match cmd_args.next().unwrap() {
-            "/list" => {
-                log::info!("conn {conn}: listing rooms");
+        if let Some(cmd) = cmd_args.next() {
+            match cmd {
+                "/join" => {
+                    if let Some(room) = cmd_args.next() {
+                        log::info!("conn {}: joining room {}", conn, room);
 
-                let rooms = chat_server.list_rooms().await;
-
-                for room in rooms {
-                    session.text(room).await.unwrap();
-                }
-            }
-
-            "/join" => match cmd_args.next() {
-                Some(room) => {
-                    log::info!("conn {conn}: joining room {room}");
-
-                    chat_server.join_room(conn, room).await;
-
-                    session.text(format!("joined {room}")).await.unwrap();
+                        chat_server.join_room(conn, room).await;
+                        send_text(session, format!("joined {}", room)).await;
+                    } else {
+                        send_text(session, "!!! room name is required".to_owned()).await;
+                    }
                 }
 
-                None => {
-                    session.text("!!! room name is required").await.unwrap();
+                _ => {
+                    send_text(session, format!("!!! unknown command: {}", msg)).await;
                 }
-            },
-
-            "/name" => match cmd_args.next() {
-                Some(new_name) => {
-                    log::info!("conn {conn}: setting name to: {new_name}");
-                    name.replace(new_name.to_owned());
-                }
-                None => {
-                    session.text("!!! name is required").await.unwrap();
-                }
-            },
-
-            _ => {
-                session
-                    .text(format!("!!! unknown command: {msg}"))
-                    .await
-                    .unwrap();
             }
         }
     } else {
@@ -188,5 +160,12 @@ async fn process_text_msg(
         };
 
         chat_server.send_message(conn, msg).await
+    }
+}
+
+/// 辅助函数用于处理发送消息时的错误
+async fn send_text(session: &mut actix_ws::Session, text: String) {
+    if let Err(e) = session.text(text).await {
+        log::error!("Failed to send message, reason: {}", e);
     }
 }
