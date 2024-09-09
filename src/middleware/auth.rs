@@ -8,6 +8,11 @@ use futures_util::future::{self, LocalBoxFuture};
 use crate::util;
 use crate::util::error::CustomError::UnauthorizedError;
 
+// 定义错误信息常量
+const AUTH_REQUIRED: &str = "Authentication required!";
+const MISSING_SCHEME: &str = "Missing authorization scheme";
+const INVALID_HEADER: &str = "Invalid header value";
+
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Claim {
     // 必要,过期时间,UTC 时间戳
@@ -37,7 +42,8 @@ pub async fn validator(
             return Err((
                 UnauthorizedError {
                     message: e.to_string(),
-                }.into(),
+                }
+                .into(),
                 req,
             ));
         }
@@ -51,7 +57,8 @@ pub async fn validator(
             return Err((
                 UnauthorizedError {
                     message: "Invalid header value".to_owned(),
-                }.into(),
+                }
+                .into(),
                 req,
             ))
         }
@@ -81,24 +88,78 @@ impl FromRequest for RealWorldToken {
     fn from_request(request: &HttpRequest, _payload: &mut dev::Payload) -> Self::Future {
         // 获取请求头中的 Authorization 值
         let authorization = request.headers().get(header::AUTHORIZATION);
-        if authorization.is_none() {
-            return future::err(ErrorBadRequest("Authentication required!"));
-        }
-        let mut parts = authorization.unwrap().to_str().unwrap().splitn(2, ' ');
 
-        let scheme = parts.next().map(|s| s.to_owned());
-        if scheme.is_none() || scheme.as_ref().is_some_and(|s| s.is_empty()) {
-            return future::err(ErrorBadRequest("Missing authorization scheme"));
-        }
+        match authorization {
+            Some(auth_header) => {
+                match auth_header.to_str() {
+                    Ok(header_value) => {
+                        let mut parts = header_value.splitn(2, ' ');
 
-        let token = parts.next().map(|s| s.to_owned());
-        if token.is_none() || token.as_ref().is_some_and(|s| s.is_empty()) {
-            return future::err(ErrorBadRequest("Invalid header value"));
-        }
+                        let scheme = parts.next().map(|s| s.to_owned());
+                        if scheme.is_none() || scheme.as_ref().unwrap_or(&String::new()).is_empty()
+                        {
+                            return future::err(ErrorBadRequest(MISSING_SCHEME));
+                        }
 
-        let scheme = scheme.unwrap();
-        let token = token.unwrap();
-        future::ok(RealWorldToken { scheme, token })
+                        let token = parts.next().map(|s| s.to_owned());
+                        if token.is_none() || token.as_ref().unwrap_or(&String::new()).is_empty() {
+                            return future::err(ErrorBadRequest(INVALID_HEADER));
+                        }
+
+                        // 验证 scheme 是否为 Bearer
+                        if scheme.as_deref() != Some("Bearer") {
+                            return future::err(ErrorBadRequest(MISSING_SCHEME));
+                        }
+
+                        let scheme = scheme.unwrap();
+                        let token = token.unwrap();
+                        future::ok(RealWorldToken { scheme, token })
+                    }
+                    Err(_) => {
+                        // 尝试从请求参数中获取 token
+                        let query_params = request.uri().query();
+                        if let Some(query) = query_params {
+                            let params: Vec<&str> = query.split('&').collect();
+                            for param in params {
+                                let parts: Vec<&str> = param.split('=').collect();
+                                if parts.len() == 2 && parts[0] == "token" {
+                                    let token = parts[1];
+                                    if token.is_empty() {
+                                        return future::err(ErrorBadRequest(INVALID_HEADER));
+                                    }
+                                    return future::ok(RealWorldToken {
+                                        scheme: "Bearer".to_owned(),
+                                        token: token.to_owned(),
+                                    });
+                                }
+                            }
+                        }
+                        future::err(ErrorBadRequest(INVALID_HEADER))
+                    }
+                }
+            }
+            None => {
+                // 尝试从请求参数中获取 token
+                let query_params = request.uri().query();
+                if let Some(query) = query_params {
+                    let params: Vec<&str> = query.split('&').collect();
+                    for param in params {
+                        let parts: Vec<&str> = param.split('=').collect();
+                        if parts.len() == 2 && parts[0] == "token" {
+                            let token = parts[1];
+                            if token.is_empty() {
+                                return future::err(ErrorBadRequest(INVALID_HEADER));
+                            }
+                            return future::ok(RealWorldToken {
+                                scheme: "Bearer".to_owned(),
+                                token: token.to_owned(),
+                            });
+                        }
+                    }
+                }
+                future::err(ErrorBadRequest(AUTH_REQUIRED))
+            }
+        }
     }
 }
 

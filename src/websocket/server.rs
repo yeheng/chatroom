@@ -99,10 +99,6 @@ impl ChatServer {
         }
     }
 
-    async fn list_rooms(&self) -> Vec<RoomId> {
-        self.rooms.read().await.keys().cloned().collect()
-    }
-
     /// 从房间中移除连接并返回被移除的房间列表
     async fn copy_write_rooms(&mut self, conn_id: ConnId) -> Vec<RoomId> {
         let mut rooms = Vec::new();

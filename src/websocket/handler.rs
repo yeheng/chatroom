@@ -10,7 +10,7 @@ use futures_util::{
 };
 use tokio::{sync::mpsc, time::interval};
 
-use crate::websocket::model::ConnId;
+use crate::{middleware::auth::Claim, websocket::model::ConnId};
 use crate::websocket::server::ChatServerHandle;
 
 /// 心跳间隔
@@ -24,10 +24,11 @@ pub async fn chat_ws(
     chat_server: ChatServerHandle,
     mut session: actix_ws::Session,
     msg_stream: actix_ws::MessageStream,
+    claims: Claim,
 ) {
     log::info!("connected");
 
-    let mut name = None;
+    let mut name = Some(claims.username);
     let mut last_heartbeat = Instant::now();
     let mut interval = interval(HEARTBEAT_INTERVAL);
 

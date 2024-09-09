@@ -1,5 +1,6 @@
 use actix_web::{App, HttpServer};
 
+use actix_web_httpauth::middleware::HttpAuthentication;
 use chatroom::config::{app_log, CONFIG};
 
 use actix_cors::Cors;
@@ -8,7 +9,7 @@ use actix_web::middleware::{DefaultHeaders, Logger};
 use actix_web::web::{self};
 use actix_web_lab::middleware::NormalizePath;
 use chatroom::util::error::CustomError;
-use chatroom::AppState;
+use chatroom::{middleware, AppState};
 use tokio::task::spawn;
 use tokio::try_join;
 use tracing_actix_web::TracingLogger;
@@ -53,7 +54,7 @@ async fn main() {
                         CustomError::ValidationError {
                             message: format!("JSON validation error: {}", err),
                         }
-                            .into()
+                        .into()
                     }),
             )
             // 添加中间件
@@ -63,18 +64,23 @@ async fn main() {
             .wrap(DefaultHeaders::new().add(header::ContentType::json())) // 默认响应头
             .wrap(NormalizePath::trim()) // 规范化路径
             // 添加 WebSocket 路由
-            .service(web::resource("/ws").to(websocket::chat_ws))
+            .service(
+                web::resource("/ws")
+                    .wrap(HttpAuthentication::with_fn(middleware::auth::validator))
+                    .to(websocket::chat_ws),
+            )
             // 配置其他路由
             .configure(modules::route::router)
     })
-        // 绑定服务器地址
-        .bind(address.clone())
-        .map_err(|e| {
-            log::error!("Failed to bind to {}: {}", address, e);
-            std::process::exit(1);
-        }).expect("REASON")
-        // 运行服务器
-        .run();
+    // 绑定服务器地址
+    .bind(address.clone())
+    .map_err(|e| {
+        log::error!("Failed to bind to {}: {}", address, e);
+        std::process::exit(1);
+    })
+    .expect("REASON")
+    // 运行服务器
+    .run();
 
     try_join!(http_server, async move { chat_server.await.unwrap() })
         .map_err(|e| {
@@ -82,5 +88,4 @@ async fn main() {
             std::process::exit(1);
         })
         .unwrap();
-
 }
