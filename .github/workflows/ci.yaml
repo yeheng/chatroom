@@ -1,5 +1,5 @@
-name: 构建发布包到开发环境
-run-name: 🚀${{ gitea.actor }} 构建发布包到开发环境
+name: 🚀构建发布包
+run-name: 🚀构建发布包
 
 on:
   push:
